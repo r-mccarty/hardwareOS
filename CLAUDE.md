@@ -4,17 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**OpticWorks RS-1** is a vision/radar sensor fusion platform for spatial tracking, built on the Rockchip RV1106G. This codebase is pivoting from the original JetKVM (KVM-over-IP) functionality to become the RS-1 base image.
+**HardwareOS** is an embedded automation platform designed to support multiple hardware targets and product configurations. It provides a common foundation for building connected hardware devices with features like WebRTC streaming, sensor fusion, OTA updates, and home automation integration.
 
-### The Pivot
+### Platform Architecture
 
-The RS-1 leverages JetKVM's solved problems:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        HardwareOS                            │
+│    (Platform: WebRTC, JSON-RPC, OTA, Networking, WoL)       │
+├─────────────────────────────────────────────────────────────┤
+│                    Hardware Targets                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   RV1106G   │  │   (Future)  │  │   (Future)  │         │
+│  │  First HW   │  │             │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+├─────────────────────────────────────────────────────────────┤
+│                       Products                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ OpticWorks  │  │   (Future)  │  │   (Future)  │         │
+│  │    RS-1     │  │             │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+- **HardwareOS**: This repository - the platform layer
+- **RV1106G**: First hardware target (Rockchip SoC with NPU)
+- **OpticWorks RS-1**: First product - vision/radar sensor fusion for spatial tracking
+
+### The Pivot from JetKVM
+
+HardwareOS builds on JetKVM's solved problems:
 - **CGO Bridge**: Go-to-C communication for hardware access
 - **WebRTC Streaming**: Low-latency video and data channels
-- **Cross-Compilation**: ARM toolchain for RV1106G
+- **Cross-Compilation**: ARM toolchain (extensible to other targets)
 - **Supervisor/OTA**: Process management and remote updates
+- **Automation Features**: Wake-on-LAN, network discovery, etc.
 
-We are replacing KVM functionality with:
+For the RS-1 product, we are adding:
 - **SC3336 MIPI Camera** with ISP lens distortion correction
 - **RKNN NPU** for YOLOv8 object detection
 - **LD2450 Radar** for range/velocity measurement
@@ -267,6 +293,7 @@ RS-1 configuration stored at `/userdata/kvm_config.json`:
 | Supervisor | Crash recovery | Keep |
 | mDNS | Device discovery | Keep |
 | Network | DHCP, WiFi, static IP | Keep |
+| Wake-on-LAN | Automation trigger | Keep |
 | Prometheus | Metrics | Keep (add fusion metrics) |
 | LVGL UI | LCD touchscreen | Keep |
 
@@ -276,10 +303,11 @@ RS-1 configuration stored at `/userdata/kvm_config.json`:
 
 | Component | Reason |
 |-----------|--------|
-| USB Gadget | No keyboard/mouse emulation |
-| HID RPC | No HID device input |
-| Virtual Media | No ISO mounting |
-| EDID/HDMI | Using MIPI camera |
-| ATX/DC Power | No power control |
+| USB Gadget | No keyboard/mouse emulation (RS-1) |
+| HID RPC | No HID device input (RS-1) |
+| Virtual Media | No ISO mounting (RS-1) |
+| EDID/HDMI | Using MIPI camera on RS-1 |
+| ATX/DC Power | No power control (RS-1) |
 | Jiggler | No mouse simulation |
-| Wake-on-LAN | Not applicable |
+
+*Note: Components removed are RS-1 product-specific. Other HardwareOS products may retain different subsets of JetKVM functionality.*

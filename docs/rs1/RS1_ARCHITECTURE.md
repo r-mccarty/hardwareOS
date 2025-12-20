@@ -1,6 +1,18 @@
 # OpticWorks RS-1 System Architecture
 
-The RS-1 is a vision/radar sensor fusion platform built on the Rockchip RV1106G, designed for real-time spatial tracking and occupancy monitoring.
+The RS-1 is the first product built on **HardwareOS**, running on the Rockchip RV1106G hardware target. It provides vision/radar sensor fusion for real-time spatial tracking and occupancy monitoring.
+
+## HardwareOS Platform
+
+HardwareOS is an embedded automation platform that provides:
+- WebRTC streaming (video + data channels)
+- JSON-RPC command/event protocol
+- OTA updates for apps and models
+- Network management (DHCP, WiFi, static IP)
+- Automation features (Wake-on-LAN, mDNS)
+- Process supervision and crash recovery
+
+The RS-1 extends HardwareOS with sensor fusion capabilities specific to spatial tracking.
 
 ## Hardware Platform
 
