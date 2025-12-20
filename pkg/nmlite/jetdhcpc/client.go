@@ -8,6 +8,7 @@ import (
 
 	"time"
 
+	platformConfig "github.com/jetkvm/kvm/platform/config"
 	"github.com/jetkvm/kvm/internal/sync"
 	"github.com/jetkvm/kvm/pkg/nmlite/link"
 
@@ -17,9 +18,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const (
-	VendorIdentifier = "jetkvm"
-)
+// VendorIdentifier returns the DHCP vendor identifier from brand config
+func VendorIdentifier() string {
+	return platformConfig.Brand().ProductCode
+}
 
 var (
 	ErrIPv6LinkTimeout     = errors.New("timeout after waiting for a non-tentative IPv6 address")
@@ -138,7 +140,7 @@ func NewClient(ctx context.Context, ifaces []string, c *Config, l *zerolog.Logge
 		ifaces:   ifaces,
 		cfg:      cfg,
 		l:        l,
-		stateDir: "/run/jetkvm-dhcp",
+		stateDir: "/run/" + platformConfig.Brand().ProductCode + "-dhcp",
 
 		currentLease4: nil,
 		currentLease6: nil,

@@ -7,15 +7,19 @@ import (
 	"path/filepath"
 	"time"
 
+	platformConfig "github.com/jetkvm/kvm/platform/config"
 	"github.com/jetkvm/kvm/platform/network/types"
 )
 
 const (
 	// DefaultStateDir is the default state directory
 	DefaultStateDir = "/var/run/"
-	// DHCPStateFile is the name of the DHCP state file
-	DHCPStateFile = "jetkvm_dhcp_state.json"
 )
+
+// DHCPStateFile returns the DHCP state file name based on brand config
+func DHCPStateFile() string {
+	return platformConfig.Brand().ProductCode + "_dhcp_state.json"
+}
 
 // DHCPState represents the persistent state of DHCP clients
 type DHCPState struct {
@@ -57,7 +61,7 @@ func (c *Client) SaveState(state *DHCPState) error {
 	}
 
 	// Write to temporary file first, then rename to ensure atomic operation
-	tmpFile, err := os.CreateTemp(c.stateDir, DHCPStateFile)
+	tmpFile, err := os.CreateTemp(c.stateDir, DHCPStateFile())
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
@@ -67,7 +71,7 @@ func (c *Client) SaveState(state *DHCPState) error {
 		return fmt.Errorf("failed to write state file: %w", err)
 	}
 
-	stateFile := filepath.Join(c.stateDir, DHCPStateFile)
+	stateFile := filepath.Join(c.stateDir, DHCPStateFile())
 	if err := os.Rename(tmpFile.Name(), stateFile); err != nil {
 		os.Remove(tmpFile.Name())
 		return fmt.Errorf("failed to rename state file: %w", err)
@@ -79,7 +83,7 @@ func (c *Client) SaveState(state *DHCPState) error {
 
 // LoadState loads the DHCP state from disk
 func (c *Client) LoadState() (*DHCPState, error) {
-	stateFile := filepath.Join(c.stateDir, DHCPStateFile)
+	stateFile := filepath.Join(c.stateDir, DHCPStateFile())
 
 	// Check if state file exists
 	if _, err := os.Stat(stateFile); os.IsNotExist(err) {

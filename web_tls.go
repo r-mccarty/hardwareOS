@@ -9,17 +9,13 @@ import (
 	"net/http"
 	"sync"
 
+	platformConfig "github.com/jetkvm/kvm/platform/config"
 	"github.com/jetkvm/kvm/platform/web"
 )
 
 const (
-	tlsStorePath                     = "/userdata/jetkvm/tls"
-	webSecureListen                  = ":443"
-	webSecureSelfSignedDefaultDomain = "jetkvm.local"
-	webSecureSelfSignedCAName        = "JetKVM Self-Signed CA"
-	webSecureSelfSignedOrganization  = "JetKVM"
-	webSecureSelfSignedOU            = "JetKVM Self-Signed"
-	webSecureCustomCertificateName   = "user-defined"
+	webSecureListen                = ":443"
+	webSecureCustomCertificateName = "user-defined"
 )
 
 var (
@@ -38,16 +34,18 @@ func initCertStore() {
 		websecureLogger.Warn().Msg("TLS store already initialized, it should not be initialized again")
 		return
 	}
-	certStore = websecure.NewCertStore(tlsStorePath, websecureLogger)
+
+	brand := platformConfig.Brand()
+	certStore = websecure.NewCertStore(brand.TLSPath, websecureLogger)
 	certStore.LoadCertificates()
 
 	certSigner = websecure.NewSelfSigner(
 		certStore,
 		websecureLogger,
-		webSecureSelfSignedDefaultDomain,
-		webSecureSelfSignedOrganization,
-		webSecureSelfSignedOU,
-		webSecureSelfSignedCAName,
+		brand.TLSDomain,
+		brand.TLSOrganization,
+		brand.TLSOU,
+		brand.TLSCAName,
 	)
 }
 

@@ -692,7 +692,7 @@ func rpcGetDiagnostics() (string, error) {
 
 	// Section 5: Configuration
 	sb.WriteString("=== CONFIGURATION ===\n")
-	if data, err := os.ReadFile(configPath); err == nil {
+	if data, err := os.ReadFile(getConfigPath()); err == nil {
 		sb.WriteString(string(data))
 	} else {
 		sb.WriteString(fmt.Sprintf("Error reading config: %v\n", err))

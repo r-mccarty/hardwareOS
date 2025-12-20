@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	platformConfig "github.com/jetkvm/kvm/platform/config"
 	"golang.org/x/net/idna"
 )
 
@@ -63,7 +64,7 @@ func (hm *ResolvConfManager) getHostname() string {
 	if hm.hostname != "" {
 		return hm.hostname
 	}
-	return "jetkvm"
+	return platformConfig.Brand().HostnamePrefix
 }
 
 func (hm *ResolvConfManager) getDomain() string {
@@ -91,7 +92,7 @@ func (hm *ResolvConfManager) reconcileHostname() error {
 	domain := hm.getDomain()
 	hostname := hm.hostname
 	if hostname == "" {
-		hostname = "jetkvm"
+		hostname = platformConfig.Brand().HostnamePrefix
 	}
 	hm.mu.Unlock()
 

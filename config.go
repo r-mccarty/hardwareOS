@@ -9,14 +9,11 @@ import (
 	"sync"
 
 	"github.com/jetkvm/kvm/internal/confparser"
+	platformConfig "github.com/jetkvm/kvm/platform/config"
 	"github.com/jetkvm/kvm/platform/logging"
 	"github.com/jetkvm/kvm/platform/network/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-)
-
-const (
-	DefaultAPIURL = "https://api.optic.works"
 )
 
 type WakeOnLanDevice struct {
@@ -53,7 +50,7 @@ type Config struct {
 // GetUpdateAPIURL returns the update API URL
 func (c *Config) GetUpdateAPIURL() string {
 	if c.UpdateAPIURL == "" {
-		return DefaultAPIURL
+		return platformConfig.Brand().DefaultAPIURL
 	}
 	return strings.TrimSuffix(c.UpdateAPIURL, "/") + "/releases"
 }
@@ -79,13 +76,17 @@ func (c *Config) SetDisplayRotation(rotation string) error {
 	return nil
 }
 
-const configPath = "/userdata/kvm_config.json"
+// configPath returns the configuration file path from brand config
+func getConfigPath() string {
+	return platformConfig.Brand().ConfigPath
+}
 
 func getDefaultConfig() Config {
+	brand := platformConfig.Brand()
 	return Config{
-		CloudURL:             DefaultAPIURL,
-		UpdateAPIURL:         DefaultAPIURL,
-		CloudAppURL:          "https://app.optic.works",
+		CloudURL:             brand.DefaultAPIURL,
+		UpdateAPIURL:         brand.DefaultAPIURL,
+		CloudAppURL:          brand.DefaultAppURL,
 		AutoUpdateEnabled:    true,
 		ActiveExtension:      "",
 		DisplayRotation:      "270",
@@ -136,6 +137,7 @@ func LoadConfig() {
 	defaultConfig := getDefaultConfig()
 	config = &defaultConfig
 
+	configPath := getConfigPath()
 	file, err := os.Open(configPath)
 	if err != nil {
 		logger.Debug().Msg("default config file doesn't exist, using default")
@@ -168,11 +170,11 @@ func LoadConfig() {
 }
 
 func SaveConfig() error {
-	return saveConfig(configPath)
+	return saveConfig(getConfigPath())
 }
 
 func SaveBackupConfig() error {
-	return saveConfig(configPath + ".bak")
+	return saveConfig(getConfigPath() + ".bak")
 }
 
 func saveConfig(path string) error {

@@ -34,7 +34,7 @@ func (c *Client) requestLease4(ifname string) (*Lease, error) {
 	// Prepend modifiers with default options, so they can be overridden.
 	reqmods := append(
 		[]dhcpv4.Modifier{
-			dhcpv4.WithOption(dhcpv4.OptClassIdentifier(VendorIdentifier)),
+			dhcpv4.WithOption(dhcpv4.OptClassIdentifier(VendorIdentifier())),
 			dhcpv4.WithRequestedOptions(
 				dhcpv4.OptionSubnetMask,
 				dhcpv4.OptionInterfaceMTU,

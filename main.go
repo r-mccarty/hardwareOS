@@ -11,11 +11,16 @@ import (
 
 	"github.com/erikdubbelboer/gspt"
 	"github.com/gwatts/rootcerts"
+	platformConfig "github.com/jetkvm/kvm/platform/config"
 	"github.com/jetkvm/kvm/platform/ota"
 )
 
 var appCtx context.Context
-var procPrefix string = "hardwareos: [app]"
+var procPrefix string
+
+func init() {
+	procPrefix = platformConfig.Brand().ProcessPrefix + ": [app]"
+}
 
 func setProcTitle(status string) {
 	if status != "" {
@@ -26,13 +31,14 @@ func setProcTitle(status string) {
 }
 
 func Main() {
+	brand := platformConfig.Brand()
 	setProcTitle("starting")
 
-	logger.Log().Msg("HardwareOS Starting Up")
+	logger.Log().Str("product", brand.ProductName).Msg("Starting Up")
 
 	checkFailsafeReason()
 	if failsafeModeActive {
-		procPrefix = "hardwareos: [app+failsafe]"
+		procPrefix = brand.ProcessPrefix + ": [app+failsafe]"
 		logger.Warn().Str("reason", failsafeModeReason).Msg("failsafe mode activated")
 	}
 
@@ -48,9 +54,10 @@ func Main() {
 	}
 
 	logger.Info().
+		Str("product", brand.ProductName).
 		Interface("system_version", systemVersionLocal).
 		Interface("app_version", appVersionLocal).
-		Msg("starting HardwareOS")
+		Msg("starting")
 
 	go runWatchdog()
 
@@ -151,5 +158,5 @@ func Main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
 
-	logger.Log().Msg("HardwareOS Shutting Down")
+	logger.Log().Str("product", brand.ProductName).Msg("Shutting Down")
 }
