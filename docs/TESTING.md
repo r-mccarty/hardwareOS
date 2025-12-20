@@ -44,6 +44,73 @@ cd ui && npm run lint
 cd ui && JETKVM_URL=http://<IP> npm run test:e2e
 ```
 
+## Failsafe Mode (Testing Without Hardware)
+
+The application includes a **failsafe mode** that allows testing without RV1106 hardware. In this mode, the native subsystem (video capture, display, hardware encoders) is bypassed, but all Go-based functionality remains operational.
+
+### What Works in Failsafe Mode
+- JSON-RPC API handlers
+- Network management (DHCP, static IP, WiFi)
+- Cloud connectivity and WebSocket signaling
+- OTA update checking (not applying)
+- Configuration load/save
+- mDNS discovery
+- Wake-on-LAN
+- Prometheus metrics
+- Web server (HTTP/HTTPS)
+
+### What Does NOT Work in Failsafe Mode
+- Video capture and streaming
+- Display/LCD output
+- Hardware encoder (H.264/H.265)
+- Native C code execution
+- Touchscreen input
+
+### Activating Failsafe Mode
+
+**Option 1: Environment Variable (Recommended for Testing)**
+```bash
+JETKVM_FORCE_FAILSAFE=1 ./bin/opticworks-rs1_app
+```
+
+**Option 2: Failsafe File (On Device)**
+```bash
+touch /userdata/jetkvm/.enablefailsafe
+# Restart application - file is auto-removed after activation
+```
+
+**Option 3: Automatic Activation**
+Failsafe mode activates automatically when:
+- The last crash log contains video-related panics
+- The native subsystem repeatedly fails to start
+
+### Use Cases
+
+1. **Local Development**: Test API changes without cross-compiling for ARM
+2. **CI/CD Pipelines**: Run integration tests in x86_64 containers
+3. **Debugging**: Isolate issues to Go code vs native code
+4. **API Development**: Develop and test JSON-RPC handlers
+
+### Example: Running in Docker for CI
+```bash
+# Build for local architecture (skip native)
+go build -tags netgo,timetzdata,nomsgpack -o bin/test-app ./cmd/main.go
+
+# Run in failsafe mode
+JETKVM_FORCE_FAILSAFE=1 ./bin/test-app
+```
+
+### Detecting Failsafe Mode
+The application logs failsafe activation:
+```
+WARN failsafe mode activated reason=failsafe_env_set
+```
+
+Clients receive a `failsafeMode` JSON-RPC event:
+```json
+{"jsonrpc": "2.0", "method": "failsafeMode", "params": {"active": true, "reason": "failsafe_env_set"}}
+```
+
 ## Adding Tests
 - Backend: add `*_test.go` next to the package under test.
 - Device flows: add/update Playwright specs in `ui/e2e/` and keep device assumptions explicit.
