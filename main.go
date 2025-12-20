@@ -19,6 +19,8 @@ var appCtx context.Context
 var procPrefix string
 
 func init() {
+	// Set RS-1 as the default product brand
+	platformConfig.SetBrand(platformConfig.RS1Brand)
 	procPrefix = platformConfig.Brand().ProcessPrefix + ": [app]"
 }
 

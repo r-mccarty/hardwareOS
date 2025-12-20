@@ -2,15 +2,23 @@ BRANCH    := $(shell git rev-parse --abbrev-ref HEAD)
 BUILDDATE := $(shell date -u +%FT%T%z)
 BUILDTS   := $(shell date -u +%s)
 REVISION  := $(shell git rev-parse HEAD)
-VERSION := 0.5.1
+VERSION := 0.1.0
 VERSION_DEV := $(VERSION)-dev$(shell date -u +%Y%m%d%H%M)
 
 PROMETHEUS_TAG := github.com/prometheus/common/version
-KVM_PKG_NAME := github.com/jetkvm/kvm
+PKG_NAME := github.com/jetkvm/kvm
+
+# Product configuration
+PRODUCT ?= rs1
+PRODUCT_NAME := opticworks-$(PRODUCT)
 
 BUILDKIT_FLAVOR := arm-rockchip830-linux-uclibcgnueabihf
 BUILDKIT_PATH ?= /opt/jetkvm-native-buildkit
 DOCKER_BUILD_TAG ?= ghcr.io/jetkvm/buildkit:latest
+
+# Native library paths
+NATIVE_DIR := targets/rv1106/native
+NATIVE_LIB := $(NATIVE_DIR)/cgo/lib/libjknative.a
 SKIP_NATIVE_IF_EXISTS ?= 0
 SKIP_UI_BUILD ?= 0
 ENABLE_SYNC_TRACE ?= 0
@@ -28,7 +36,7 @@ GO_LDFLAGS := \
   -X $(PROMETHEUS_TAG).Branch=$(BRANCH) \
   -X $(PROMETHEUS_TAG).BuildDate=$(BUILDDATE) \
   -X $(PROMETHEUS_TAG).Revision=$(REVISION) \
-  -X $(KVM_PKG_NAME).builtTimestamp=$(BUILDTS)
+  -X $(PKG_NAME).builtTimestamp=$(BUILDTS)
 
 GO_ARGS := GOOS=linux GOARCH=arm GOARM=7 ARCHFLAGS="-arch arm"
 # if BUILDKIT_PATH exists, use buildkit to build
@@ -62,13 +70,14 @@ lint:
 check: lint test
 
 build_native:
-	@if [ "$(SKIP_NATIVE_IF_EXISTS)" = "1" ] && [ -f "internal/native/cgo/lib/libjknative.a" ]; then \
+	@if [ "$(SKIP_NATIVE_IF_EXISTS)" = "1" ] && [ -f "$(NATIVE_LIB)" ]; then \
 		echo "libjknative.a already exists, skipping native build..."; \
 	else \
 		echo "Building native..."; \
 			CC="$(BUILDKIT_PATH)/bin/$(BUILDKIT_FLAVOR)-gcc" \
 			LD="$(BUILDKIT_PATH)/bin/$(BUILDKIT_FLAVOR)-ld" \
 			CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+			NATIVE_DIR=$(NATIVE_DIR) \
 			./scripts/build_cgo.sh; \
 	fi
 
@@ -79,19 +88,19 @@ build_native:
 build_dev:
 	@if [ ! -d "$(BUILDKIT_PATH)" ]; then \
 		echo "Toolchain not found, running build_dev in Docker..."; \
-		rm -rf internal/native/cgo/build; \
+		rm -rf $(NATIVE_DIR)/cgo/build; \
 		docker run --rm -v "$$(pwd):/build" \
-			$(DOCKER_BUILD_TAG) make _build_dev_inner VERSION_DEV=$(VERSION_DEV); \
+			$(DOCKER_BUILD_TAG) make _build_dev_inner VERSION_DEV=$(VERSION_DEV) PRODUCT=$(PRODUCT); \
 	else \
 		$(MAKE) _build_dev_inner VERSION_DEV=$(VERSION_DEV); \
 	fi
 
 _build_dev_inner: build_native
-	@echo "Building... $(VERSION_DEV)"
+	@echo "Building $(PRODUCT_NAME)... $(VERSION_DEV)"
 	$(GO_CMD) build \
-		-ldflags="$(GO_LDFLAGS) -X $(KVM_PKG_NAME).builtAppVersion=$(VERSION_DEV)" \
+		-ldflags="$(GO_LDFLAGS) -X $(PKG_NAME).builtAppVersion=$(VERSION_DEV)" \
 		$(GO_RELEASE_BUILD_ARGS) \
-		-o $(BIN_DIR)/jetkvm_app -v cmd/main.go
+		-o $(BIN_DIR)/$(PRODUCT_NAME)_app -v cmd/main.go
 
 build_test2json:
 	$(GO_CMD) build -o $(BIN_DIR)/test2json cmd/test2json
@@ -109,10 +118,10 @@ build_dev_test: build_test2json build_gotestsum
 	@cat resource/dev_test.sh > $(BIN_DIR)/tests/run_all_tests
 	@for test in $(TEST_DIRS); do \
 		test_pkg_name=$$(echo $$test | sed 's/^.\///g'); \
-		test_pkg_full_name=$(KVM_PKG_NAME)/$$(echo $$test | sed 's/^.\///g'); \
+		test_pkg_full_name=$(PKG_NAME)/$$(echo $$test | sed 's/^.\///g'); \
 		test_filename=$$(echo $$test_pkg_name | sed 's/\//__/g')_test; \
 		$(GO_CMD) test -v \
-			-ldflags="$(GO_LDFLAGS) -X $(KVM_PKG_NAME).builtAppVersion=$(VERSION_DEV)" \
+			-ldflags="$(GO_LDFLAGS) -X $(PKG_NAME).builtAppVersion=$(VERSION_DEV)" \
 			$(GO_BUILD_ARGS) \
 			-c -o $(BIN_DIR)/tests/$$test_filename $$test; \
 		echo "runTest ./$$test_filename $$test_pkg_full_name" >> $(BIN_DIR)/tests/run_all_tests; \
@@ -191,19 +200,19 @@ dev_release: git_check_dev
 build_release:
 	@if [ ! -d "$(BUILDKIT_PATH)" ]; then \
 		echo "Toolchain not found, running build_release in Docker..."; \
-		rm -rf internal/native/cgo/build; \
+		rm -rf $(NATIVE_DIR)/cgo/build; \
 		docker run --rm -v "$$(pwd):/build" \
-			$(DOCKER_BUILD_TAG) make _build_release_inner VERSION=$(VERSION); \
+			$(DOCKER_BUILD_TAG) make _build_release_inner VERSION=$(VERSION) PRODUCT=$(PRODUCT); \
 	else \
 		$(MAKE) _build_release_inner VERSION=$(VERSION); \
 	fi
 
 _build_release_inner: build_native
-	@echo "Building release..."
+	@echo "Building $(PRODUCT_NAME) release..."
 	$(GO_CMD) build \
-		-ldflags="$(GO_LDFLAGS) -X $(KVM_PKG_NAME).builtAppVersion=$(VERSION)" \
+		-ldflags="$(GO_LDFLAGS) -X $(PKG_NAME).builtAppVersion=$(VERSION)" \
 		$(GO_RELEASE_BUILD_ARGS) \
-		-o bin/jetkvm_app cmd/main.go
+		-o bin/$(PRODUCT_NAME)_app cmd/main.go
 
 release: git_check_dev
 	@if rclone lsf r2://jetkvm-update/app/$(VERSION)/ 2>/dev/null | grep -q "jetkvm_app"; then \

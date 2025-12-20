@@ -6,7 +6,9 @@ source ${SCRIPT_PATH}/build_utils.sh
 
 CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:-Release}
 
-CGO_PATH=$(realpath "${SCRIPT_PATH}/../internal/native/cgo")
+# Use NATIVE_DIR from environment if set, otherwise default to targets/rv1106/native
+NATIVE_DIR=${NATIVE_DIR:-targets/rv1106/native}
+CGO_PATH=$(realpath "${SCRIPT_PATH}/../${NATIVE_DIR}/cgo")
 BUILD_DIR=${CGO_PATH}/build
 
 CMAKE_TOOLCHAIN_FILE=/opt/jetkvm-native-buildkit/rv1106-jetkvm-v2.cmake
