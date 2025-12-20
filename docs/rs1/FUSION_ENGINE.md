@@ -341,7 +341,7 @@ import (
     "time"
 
     "github.com/jetkvm/kvm/internal/radar"
-    "github.com/jetkvm/kvm/internal/native/proto"
+    "github.com/jetkvm/kvm/targets/rv1106/native/proto"
 )
 
 // FusionEngine combines vision and radar data

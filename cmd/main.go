@@ -13,7 +13,7 @@ import (
 
 	"github.com/erikdubbelboer/gspt"
 	"github.com/jetkvm/kvm"
-	"github.com/jetkvm/kvm/internal/native"
+	"github.com/jetkvm/kvm/targets/rv1106/native"
 	"github.com/jetkvm/kvm/internal/supervisor"
 )
 

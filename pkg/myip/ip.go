@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jetkvm/kvm/internal/logging"
+	"github.com/jetkvm/kvm/platform/logging"
 	"github.com/rs/zerolog"
 )
 

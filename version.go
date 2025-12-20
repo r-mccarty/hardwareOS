@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jetkvm/kvm/internal/native"
+	"github.com/jetkvm/kvm/targets/rv1106/native"
 	"github.com/prometheus/common/version"
 )
 

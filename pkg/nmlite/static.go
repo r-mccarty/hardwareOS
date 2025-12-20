@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/jetkvm/kvm/internal/network/types"
+	"github.com/jetkvm/kvm/platform/network/types"
 	"github.com/jetkvm/kvm/pkg/nmlite/link"
 	"github.com/rs/zerolog"
 )

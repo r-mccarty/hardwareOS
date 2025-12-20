@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jetkvm/kvm/internal/network/types"
+	"github.com/jetkvm/kvm/platform/network/types"
 )
 
 type Lease struct {

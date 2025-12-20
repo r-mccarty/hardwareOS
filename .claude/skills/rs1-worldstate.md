@@ -100,7 +100,7 @@ import (
     "github.com/pion/webrtc/v4"
     "google.golang.org/protobuf/proto"
 
-    pb "github.com/jetkvm/kvm/internal/native/proto"
+    pb "github.com/jetkvm/kvm/targets/rv1106/native/proto"
     "github.com/jetkvm/kvm/internal/fusion"
 )
 

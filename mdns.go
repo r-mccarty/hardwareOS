@@ -3,7 +3,7 @@ package kvm
 import (
 	"fmt"
 
-	"github.com/jetkvm/kvm/internal/mdns"
+	"github.com/jetkvm/kvm/platform/mdns"
 )
 
 var mDNS *mdns.MDNS

@@ -1,4 +1,4 @@
-# OpticWorks RS-1 System Architecture
+has# OpticWorks RS-1 System Architecture
 
 The RS-1 is the first product built on **HardwareOS**, running on the Rockchip RV1106G hardware target. It provides vision/radar sensor fusion for real-time spatial tracking and occupancy monitoring.
 

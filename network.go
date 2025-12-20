@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/jetkvm/kvm/internal/confparser"
-	"github.com/jetkvm/kvm/internal/mdns"
-	"github.com/jetkvm/kvm/internal/network/types"
-	"github.com/jetkvm/kvm/internal/ota"
+	"github.com/jetkvm/kvm/platform/mdns"
+	"github.com/jetkvm/kvm/platform/network/types"
+	"github.com/jetkvm/kvm/platform/ota"
 	"github.com/jetkvm/kvm/pkg/myip"
 	"github.com/jetkvm/kvm/pkg/nmlite"
 	"github.com/jetkvm/kvm/pkg/nmlite/link"

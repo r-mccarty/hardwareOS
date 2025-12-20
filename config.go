@@ -9,78 +9,19 @@ import (
 	"sync"
 
 	"github.com/jetkvm/kvm/internal/confparser"
-	"github.com/jetkvm/kvm/internal/logging"
-	"github.com/jetkvm/kvm/internal/network/types"
-	"github.com/jetkvm/kvm/internal/usbgadget"
+	"github.com/jetkvm/kvm/platform/logging"
+	"github.com/jetkvm/kvm/platform/network/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const (
-	DefaultAPIURL = "https://api.jetkvm.com"
+	DefaultAPIURL = "https://api.optic.works"
 )
 
 type WakeOnLanDevice struct {
 	Name       string `json:"name"`
 	MacAddress string `json:"macAddress"`
-}
-
-// Constants for keyboard macro limits
-const (
-	MaxMacrosPerDevice = 25
-	MaxStepsPerMacro   = 10
-	MaxKeysPerStep     = 10
-	MinStepDelay       = 50
-	MaxStepDelay       = 2000
-)
-
-type KeyboardMacroStep struct {
-	Keys      []string `json:"keys"`
-	Modifiers []string `json:"modifiers"`
-	Delay     int      `json:"delay"`
-}
-
-func (s *KeyboardMacroStep) Validate() error {
-	if len(s.Keys) > MaxKeysPerStep {
-		return fmt.Errorf("too many keys in step (max %d)", MaxKeysPerStep)
-	}
-
-	if s.Delay < MinStepDelay {
-		s.Delay = MinStepDelay
-	} else if s.Delay > MaxStepDelay {
-		s.Delay = MaxStepDelay
-	}
-
-	return nil
-}
-
-type KeyboardMacro struct {
-	ID        string              `json:"id"`
-	Name      string              `json:"name"`
-	Steps     []KeyboardMacroStep `json:"steps"`
-	SortOrder int                 `json:"sortOrder,omitempty"`
-}
-
-func (m *KeyboardMacro) Validate() error {
-	if m.Name == "" {
-		return fmt.Errorf("macro name cannot be empty")
-	}
-
-	if len(m.Steps) == 0 {
-		return fmt.Errorf("macro must have at least one step")
-	}
-
-	if len(m.Steps) > MaxStepsPerMacro {
-		return fmt.Errorf("too many steps in macro (max %d)", MaxStepsPerMacro)
-	}
-
-	for i := range m.Steps {
-		if err := m.Steps[i].Validate(); err != nil {
-			return fmt.Errorf("invalid step %d: %w", i+1, err)
-		}
-	}
-
-	return nil
 }
 
 type Config struct {
@@ -89,8 +30,6 @@ type Config struct {
 	CloudAppURL          string               `json:"cloud_app_url"`
 	CloudToken           string               `json:"cloud_token"`
 	GoogleIdentity       string               `json:"google_identity"`
-	JigglerEnabled       bool                 `json:"jiggler_enabled"`
-	JigglerConfig        *JigglerConfig       `json:"jiggler_config"`
 	AutoUpdateEnabled    bool                 `json:"auto_update_enabled"`
 	IncludePreRelease    bool                 `json:"include_pre_release"`
 	HashedPassword       string               `json:"hashed_password"`
@@ -98,17 +37,12 @@ type Config struct {
 	LocalAuthMode        string               `json:"localAuthMode"` //TODO: fix it with migration
 	LocalLoopbackOnly    bool                 `json:"local_loopback_only"`
 	WakeOnLanDevices     []WakeOnLanDevice    `json:"wake_on_lan_devices"`
-	KeyboardMacros       []KeyboardMacro      `json:"keyboard_macros"`
-	KeyboardLayout       string               `json:"keyboard_layout"`
-	EdidString           string               `json:"hdmi_edid_string"`
 	ActiveExtension      string               `json:"active_extension"`
 	DisplayRotation      string               `json:"display_rotation"`
 	DisplayMaxBrightness int                  `json:"display_max_brightness"`
 	DisplayDimAfterSec   int                  `json:"display_dim_after_sec"`
 	DisplayOffAfterSec   int                  `json:"display_off_after_sec"`
 	TLSMode              string               `json:"tls_mode"` // options: "self-signed", "user-defined", ""
-	UsbConfig            *usbgadget.Config    `json:"usb_config"`
-	UsbDevices           *usbgadget.Devices   `json:"usb_devices"`
 	NetworkConfig        *types.NetworkConfig `json:"network_config"`
 	DefaultLogLevel      string               `json:"default_log_level"`
 	VideoSleepAfterSec   int                  `json:"video_sleep_after_sec"`
@@ -147,49 +81,18 @@ func (c *Config) SetDisplayRotation(rotation string) error {
 
 const configPath = "/userdata/kvm_config.json"
 
-// it's a temporary solution to avoid sharing the same pointer
-// we should migrate to a proper config solution in the future
-var (
-	defaultJigglerConfig = JigglerConfig{
-		InactivityLimitSeconds: 60,
-		JitterPercentage:       25,
-		ScheduleCronTab:        "0 * * * * *",
-		Timezone:               "UTC",
-	}
-	defaultUsbConfig = usbgadget.Config{
-		VendorId:     "0x1d6b", //The Linux Foundation
-		ProductId:    "0x0104", //Multifunction Composite Gadget
-		SerialNumber: "",
-		Manufacturer: "JetKVM",
-		Product:      "USB Emulation Device",
-	}
-	defaultUsbDevices = usbgadget.Devices{
-		AbsoluteMouse: true,
-		RelativeMouse: true,
-		Keyboard:      true,
-		MassStorage:   true,
-	}
-)
-
 func getDefaultConfig() Config {
 	return Config{
 		CloudURL:             DefaultAPIURL,
 		UpdateAPIURL:         DefaultAPIURL,
-		CloudAppURL:          "https://app.jetkvm.com",
-		AutoUpdateEnabled:    true, // Set a default value
+		CloudAppURL:          "https://app.optic.works",
+		AutoUpdateEnabled:    true,
 		ActiveExtension:      "",
-		KeyboardMacros:       []KeyboardMacro{},
 		DisplayRotation:      "270",
-		KeyboardLayout:       "en-US",
 		DisplayMaxBrightness: 64,
 		DisplayDimAfterSec:   120,  // 2 minutes
 		DisplayOffAfterSec:   1800, // 30 minutes
-		JigglerEnabled:       false,
-		// This is the "Standard" jiggler option in the UI
-		JigglerConfig: func() *JigglerConfig { c := defaultJigglerConfig; return &c }(),
-		TLSMode:       "",
-		UsbConfig:     func() *usbgadget.Config { c := defaultUsbConfig; return &c }(),
-		UsbDevices:    func() *usbgadget.Devices { c := defaultUsbDevices; return &c }(),
+		TLSMode:              "",
 		NetworkConfig: func() *types.NetworkConfig {
 			c := &types.NetworkConfig{}
 			_ = confparser.SetDefaultsAndValidate(c)
@@ -208,13 +111,13 @@ var (
 var (
 	configSuccess = promauto.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "jetkvm_config_last_reload_successful",
+			Name: "hardwareos_config_last_reload_successful",
 			Help: "The last configuration load succeeded",
 		},
 	)
 	configSuccessTime = promauto.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "jetkvm_config_last_reload_success_timestamp_seconds",
+			Name: "hardwareos_config_last_reload_success_timestamp_seconds",
 			Help: "Timestamp of last successful config load",
 		},
 	)
@@ -250,26 +153,8 @@ func LoadConfig() {
 		return
 	}
 
-	// merge the user config with the default config
-	if loadedConfig.UsbConfig == nil {
-		loadedConfig.UsbConfig = getDefaultConfig().UsbConfig
-	}
-
-	if loadedConfig.UsbDevices == nil {
-		loadedConfig.UsbDevices = getDefaultConfig().UsbDevices
-	}
-
 	if loadedConfig.NetworkConfig == nil {
 		loadedConfig.NetworkConfig = getDefaultConfig().NetworkConfig
-	}
-
-	if loadedConfig.JigglerConfig == nil {
-		loadedConfig.JigglerConfig = getDefaultConfig().JigglerConfig
-	}
-
-	// fixup old keyboard layout value
-	if loadedConfig.KeyboardLayout == "en_US" {
-		loadedConfig.KeyboardLayout = "en-US"
 	}
 
 	config = &loadedConfig
@@ -295,11 +180,6 @@ func saveConfig(path string) error {
 	defer configLock.Unlock()
 
 	logger.Trace().Str("path", path).Msg("Saving config")
-
-	// fixup old keyboard layout value
-	if config.KeyboardLayout == "en_US" {
-		config.KeyboardLayout = "en-US"
-	}
 
 	file, err := os.Create(path)
 	if err != nil {

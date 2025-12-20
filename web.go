@@ -21,7 +21,7 @@ import (
 	gin_logger "github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/jetkvm/kvm/internal/logging"
+	"github.com/jetkvm/kvm/platform/logging"
 	"github.com/pion/webrtc/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -184,7 +184,6 @@ func setupRouter() *gin.Engine {
 		protected.POST("/auth/password-local", handleCreatePassword)
 		protected.PUT("/auth/password-local", handleUpdatePassword)
 		protected.DELETE("/auth/local-password", handleDeletePassword)
-		protected.POST("/storage/upload", handleUploadHttp)
 
 		protected.POST("/device/send-wol/:mac-addr", handleSendWOLMagicPacket)
 	}
@@ -231,9 +230,6 @@ func handleWebRTCSession(c *gin.Context) {
 			_ = peerConn.Close()
 		}()
 	}
-
-	// Cancel any ongoing keyboard macro when session changes
-	cancelKeyboardMacro()
 
 	currentSession = session
 	c.JSON(http.StatusOK, gin.H{"sd": sd})

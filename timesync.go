@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jetkvm/kvm/internal/timesync"
+	"github.com/jetkvm/kvm/platform/timesync"
 )
 
 var (

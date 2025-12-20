@@ -7,7 +7,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/jetkvm/kvm/internal/diagnostics"
-	"github.com/jetkvm/kvm/internal/native"
+	"github.com/jetkvm/kvm/targets/rv1106/native"
 	"github.com/pion/webrtc/v4/pkg/media"
 )
 
@@ -96,11 +96,6 @@ func initNative(systemVersion *semver.Version, appVersion *semver.Version) {
 	if err := nativeInstance.Start(); err != nil {
 		nativeLogger.Fatal().Err(err).Msg("failed to start native proxy")
 	}
-	go func() {
-		if err := nativeInstance.VideoSetEDID(config.EdidString); err != nil {
-			nativeLogger.Warn().Err(err).Msg("error setting EDID")
-		}
-	}()
 
 	if os.Getenv("JETKVM_CRASH_TESTING") == "1" {
 		nativeInstance.DoNotUseThisIsForCrashTestingOnly()

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jetkvm/kvm/internal/network/types"
+	"github.com/jetkvm/kvm/platform/network/types"
 	"github.com/jetkvm/kvm/pkg/nmlite/jetdhcpc"
 	"github.com/jetkvm/kvm/pkg/nmlite/udhcpc"
 	"github.com/rs/zerolog"

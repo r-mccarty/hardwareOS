@@ -134,7 +134,7 @@ The SSE endpoint is attached in `internal/logging/sse.go` and provides:
 ### Using Loggers in Code
 
 ```go
-import "github.com/jetkvm/kvm/internal/logging"
+import "github.com/jetkvm/kvm/platform/logging"
 
 // Get a subsystem logger
 var myLogger = logging.GetSubsystemLogger("mysubsystem")

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jetkvm/kvm/internal/sync"
 
-	"github.com/jetkvm/kvm/internal/network/types"
+	"github.com/jetkvm/kvm/platform/network/types"
 	"github.com/rs/zerolog"
 	"github.com/vishvananda/netlink"
 )

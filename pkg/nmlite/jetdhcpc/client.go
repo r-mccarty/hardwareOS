@@ -13,7 +13,7 @@ import (
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/jetkvm/kvm/internal/network/types"
+	"github.com/jetkvm/kvm/platform/network/types"
 	"github.com/rs/zerolog"
 )
 

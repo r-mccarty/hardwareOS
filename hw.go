@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jetkvm/kvm/internal/ota"
+	"github.com/jetkvm/kvm/platform/ota"
 )
 
 func extractSerialNumber() (string, error) {

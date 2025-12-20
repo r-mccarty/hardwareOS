@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/jetkvm/kvm/internal/websecure"
+	"github.com/jetkvm/kvm/platform/web"
 )
 
 const (

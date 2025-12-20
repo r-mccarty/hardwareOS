@@ -11,8 +11,8 @@ import (
 	"github.com/jetkvm/kvm/internal/sync"
 
 	"github.com/jetkvm/kvm/internal/confparser"
-	"github.com/jetkvm/kvm/internal/logging"
-	"github.com/jetkvm/kvm/internal/network/types"
+	"github.com/jetkvm/kvm/platform/logging"
+	"github.com/jetkvm/kvm/platform/network/types"
 	"github.com/jetkvm/kvm/pkg/nmlite/link"
 	"github.com/mdlayher/ndp"
 	"github.com/rs/zerolog"

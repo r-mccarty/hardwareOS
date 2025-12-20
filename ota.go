@@ -9,7 +9,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/uuid"
-	"github.com/jetkvm/kvm/internal/ota"
+	"github.com/jetkvm/kvm/platform/ota"
 )
 
 var builtAppVersion = "0.1.0+dev"
