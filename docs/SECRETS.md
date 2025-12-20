@@ -1,6 +1,47 @@
 # Secrets and Credentials
 
-This document catalogs all secrets, credentials, and sensitive configuration for JetKVM. Use this for setting up your secrets vault (e.g., Infisical).
+This document catalogs all secrets, credentials, and sensitive configuration for HardwareOS/OpticWorks RS-1. Secrets are stored in **Infisical**.
+
+## Infisical Quick Start
+
+### Codespaces
+
+`INFISICAL_SERVICE_TOKEN` should be configured as a Codespace secret:
+
+```bash
+# Get a secret
+infisical secrets get DATABASE_URL --env=prod \
+  --projectId=42e9e77c-88fa-4cbb-925b-5064c8e3b18c \
+  --token="$INFISICAL_SERVICE_TOKEN" --plain
+
+# Set a secret
+infisical secrets set NEW_SECRET="value" --env=prod \
+  --projectId=42e9e77c-88fa-4cbb-925b-5064c8e3b18c \
+  --token="$INFISICAL_SERVICE_TOKEN"
+```
+
+### GitHub Token
+
+A GitHub PAT is stored in Infisical for repo access when Codespace token lacks permissions:
+
+```bash
+GITHUB_PAT=$(infisical secrets get GITHUB_TOKEN --env=prod \
+  --projectId=42e9e77c-88fa-4cbb-925b-5064c8e3b18c \
+  --token="$INFISICAL_SERVICE_TOKEN" --plain 2>/dev/null)
+git remote set-url origin "https://${GITHUB_PAT}@github.com/r-mccarty/hardwareos.git"
+```
+
+### SSH Access to Hetzner
+
+```bash
+infisical secrets get HETZNER_VM_SSH_KEY --env=prod \
+  --projectId=42e9e77c-88fa-4cbb-925b-5064c8e3b18c \
+  --token="$INFISICAL_SERVICE_TOKEN" --plain > ~/.ssh/hetzner_key
+chmod 600 ~/.ssh/hetzner_key
+ssh -i ~/.ssh/hetzner_key root@<server-ip>
+```
+
+---
 
 ## Vault Structure Recommendation
 
@@ -27,7 +68,7 @@ jetkvm/
 
 ## Device Secrets
 
-These are stored on-device in `/userdata/kvm_config.json`:
+These are stored on-device in `/userdata/opticworks/config.json` (RS-1) or `/userdata/kvm_config.json` (legacy):
 
 | Secret | Field | Type | Purpose |
 |--------|-------|------|---------|
@@ -57,7 +98,7 @@ These are stored on-device in `/userdata/kvm_config.json`:
 
 ## TLS Certificates
 
-Stored in `/userdata/jetkvm/tls/`:
+Stored in `/userdata/opticworks/tls/` (RS-1) or `/userdata/jetkvm/tls/` (legacy):
 
 | File | Purpose | Format |
 |------|---------|--------|
@@ -171,9 +212,8 @@ Not secrets, but important configuration:
 
 | Endpoint | Purpose |
 |----------|---------|
-| `https://api.jetkvm.com` | Production cloud API |
-| `https://staging-api.jetkvm.com` | Staging cloud API |
-| `https://app.jetkvm.com` | Cloud web app |
+| `https://api.optic.works` | Production cloud API (OpticWorks) |
+| `https://app.optic.works` | Cloud web app (OpticWorks) |
 | `https://accounts.google.com` | Google OIDC provider |
 | `time.cloudflare.com` | NTP server |
 | `time.aws.com` | NTP server (fallback) |
@@ -257,7 +297,15 @@ env:
 
 | File Path | Secrets Present |
 |-----------|-----------------|
-| `/userdata/kvm_config.json` | cloudToken, googleIdentity, localAuthToken, hashedPassword |
-| `/userdata/jetkvm/tls/*.key` | TLS private keys |
+| `/userdata/opticworks/config.json` | cloudToken, googleIdentity, localAuthToken, hashedPassword (RS-1) |
+| `/userdata/kvm_config.json` | cloudToken, googleIdentity, localAuthToken, hashedPassword (legacy) |
+| `/userdata/opticworks/tls/*.key` | TLS private keys (RS-1) |
+| `/userdata/jetkvm/tls/*.key` | TLS private keys (legacy) |
 | `/userdata/dropbear/.ssh/authorized_keys` | SSH public keys |
 | `~/.config/rclone/rclone.conf` | R2 access credentials |
+
+## Related Documentation
+
+- [opticworks-store/docs/SECRETS.md](https://github.com/r-mccarty/opticworks-store/blob/main/docs/SECRETS.md) - Full secrets reference for store/backend
+- [opticworks-store/docs/reference/BACKEND_OPERATIONS.md](https://github.com/r-mccarty/opticworks-store/blob/main/docs/reference/BACKEND_OPERATIONS.md) - Server access and operations
+- [CLOUD_API.md](CLOUD_API.md) - Go device service API specification
