@@ -5,9 +5,66 @@
 
 import { Hono } from 'hono';
 import type { Env, Device, RegisterDeviceRequest, TokenExchangeRequest } from '../types';
-import { generateToken, generateId, nowISO, jsonResponse, errorResponse } from '../utils';
+import { generateToken, generateId, nowISO, jsonResponse, errorResponse, parseCookies, hashToken } from '../utils';
 
 const devices = new Hono<{ Bindings: Env }>();
+
+const SESSION_COOKIE_NAME = 'opticworks_session';
+
+/**
+ * GET /devices
+ * List all devices for the authenticated user (used by frontend)
+ */
+devices.get('/', async (c) => {
+  const { DB } = c.env;
+  const cookies = parseCookies(c.req.header('Cookie'));
+  const sessionToken = cookies[SESSION_COOKIE_NAME];
+
+  if (!sessionToken) {
+    return errorResponse('unauthorized', 'Not authenticated', 401);
+  }
+
+  const tokenHash = await hashToken(sessionToken);
+
+  // Find valid session
+  const session = await DB.prepare(
+    `SELECT s.user_id
+     FROM user_sessions s
+     WHERE s.token_hash = ? AND s.expires_at > datetime('now')`
+  )
+    .bind(tokenHash)
+    .first<{ user_id: string }>();
+
+  if (!session) {
+    return errorResponse('unauthorized', 'Session expired or invalid', 401);
+  }
+
+  // Get user's devices
+  const devicesList = await DB.prepare(
+    `SELECT id, serial_number, product_type, firmware_version, last_seen_at
+     FROM devices
+     WHERE customer_id = ?`
+  )
+    .bind(session.user_id)
+    .all<{
+      id: string;
+      serial_number: string;
+      product_type: string;
+      firmware_version: string | null;
+      last_seen_at: string | null;
+    }>();
+
+  // Transform to frontend expected format
+  const devices = (devicesList.results || []).map((d) => ({
+    id: d.id,
+    name: d.serial_number, // Use serial as display name
+    online: d.last_seen_at ? (Date.now() - new Date(d.last_seen_at).getTime()) < 5 * 60 * 1000 : false,
+    lastSeen: d.last_seen_at || '',
+    version: d.firmware_version || 'unknown',
+  }));
+
+  return jsonResponse({ devices });
+});
 
 /**
  * POST /devices/register
