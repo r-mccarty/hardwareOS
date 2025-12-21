@@ -1,0 +1,32 @@
+name = "opticworks-cloud-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Development settings
+[dev]
+port = 3000
+local_protocol = "http"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "opticworks-devices"
+database_id = "local" # Will be replaced after creating the database
+
+# R2 Bucket for firmware storage (optional, for OTA)
+# [[r2_buckets]]
+# binding = "FIRMWARE_BUCKET"
+# bucket_name = "opticworks-firmware"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Production environment
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# Staging environment
+[env.staging]
+vars = { ENVIRONMENT = "staging" }

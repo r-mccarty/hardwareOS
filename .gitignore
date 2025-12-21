@@ -15,3 +15,12 @@ node_modules
 #internal/native/lib
 
 ui/reports
+
+# Playwright MCP screenshots
+.playwright-mcp/
+
+# Claude agent state
+.claude/agents/
+
+# Wrangler local state
+.wrangler/
