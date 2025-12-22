@@ -14,11 +14,11 @@ body:
         [Troubleshooting][] and [Device FAQs][]. Only use bug reports for actual
         bugs.
 
-        [documentation]: https://jetkvm.com/docs
-        [Troubleshooting]: https://jetkvm.com/docs/getting-started/troubleshooting
-        [Device FAQs]: https://jetkvm.com/docs/getting-started/faq
-        [discussions]: https://github.com/jetkvm/kvm/discussions
-        [Discord]: https://jetkvm.com/discord
+        [documentation]: https://optic.works/docs
+        [Troubleshooting]: https://optic.works/docs/getting-started/troubleshooting
+        [Device FAQs]: https://optic.works/docs/getting-started/faq
+        [discussions]: https://github.com/opticworks/hardwareOS/discussions
+        [Discord]: https://optic.works/discord
       options:
         - label: I have read and understood the disclaimer.
           required: true
@@ -41,8 +41,8 @@ body:
       label: Device model
       description: Provide the device model
       options:
-        - JetKVM
-        - JetKVM (POE)
+        - OpticWorks RS-1
+        - OpticWorks RS-1 (POE)
     validations:
       required: false
   - type: dropdown

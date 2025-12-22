@@ -13,7 +13,7 @@
 - `make build_dev` / `make build_release`: produce device binaries (uses local toolchain or Docker buildkit).
 - `make frontend`: build the device UI into `static/`.
 - `make test` or `go test ./...`: run Go unit tests.
-- `make test_e2e` or `cd ui && JETKVM_URL=http://<IP> npm run test:e2e`: Playwright E2E tests against a device.
+- `make test_e2e` or `cd ui && DEVICE_URL=http://<IP> npm run test:e2e`: Playwright E2E tests against a device.
 - `cd ui && npm run lint`: run ESLint (also compiles i18n messages).
 
 ## Coding Style & Naming Conventions
@@ -34,4 +34,4 @@
 
 ## Security & Configuration Tips
 - Device configuration is stored at `/userdata/kvm_config.json`; do not commit secrets.
-- Useful dev env vars: `LOG_TRACE_SCOPES` for verbose logging and `JETKVM_PROXY_URL` for frontend dev.
+- Useful dev env vars: `LOG_TRACE_SCOPES` for verbose logging and `DEVICE_PROXY_URL` for frontend dev.
