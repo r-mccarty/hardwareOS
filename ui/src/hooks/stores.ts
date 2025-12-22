@@ -1009,6 +1009,7 @@ import type {
   TrackedObject,
   WorldStateMessage,
   RoomPlanState,
+  ExtendedRoomPlanState,
   Point2D,
   Obstacle,
 } from "@/types/worldstate";
@@ -1037,10 +1038,10 @@ export const useWorldStateStore = create<WorldStateStoreState>(set => ({
 }));
 
 export interface RoomPlanStoreState {
-  roomPlan: RoomPlanState | null;
+  roomPlan: ExtendedRoomPlanState | null;
   loading: boolean;
   error: string | null;
-  setRoomPlan: (plan: RoomPlanState) => void;
+  setRoomPlan: (plan: ExtendedRoomPlanState) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 }
@@ -1055,4 +1056,11 @@ export const useRoomPlanStore = create<RoomPlanStoreState>(set => ({
 }));
 
 // Re-export types for convenience
-export type { TrackedObject, WorldStateMessage, RoomPlanState, Point2D, Obstacle };
+export type {
+  TrackedObject,
+  WorldStateMessage,
+  RoomPlanState,
+  ExtendedRoomPlanState,
+  Point2D,
+  Obstacle,
+};

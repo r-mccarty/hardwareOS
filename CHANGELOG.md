@@ -9,6 +9,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Apple RoomPlan CapturedRoom Integration (2024-12-22)
+
+Integration with Apple's RoomPlan framework to render 3D room geometry from iPhone/iPad LiDAR scans.
+
+**New Types** (`ui/src/types/`):
+
+| File | Description |
+|------|-------------|
+| `capturedRoom.ts` | TypeScript types for Apple CapturedRoom JSON format |
+
+**Parser Utilities** (`ui/src/utils/`):
+
+| File | Description |
+|------|-------------|
+| `capturedRoomParser.ts` | Converts CapturedRoom JSON → ExtendedRoomPlanState |
+| `mockCapturedRoom.ts` | Mock 6m × 5m office for demo mode testing |
+
+**3D Components** (`ui/src/components/visualization/Room/`):
+
+| File | Description |
+|------|-------------|
+| `Wall3D.tsx` | Semi-transparent wall rendering with transform support |
+| `Door3D.tsx` | Orange door frame visualization |
+| `Window3D.tsx` | Blue glass windows with cross dividers |
+| `Furniture3D.tsx` | Category-colored furniture bounding boxes |
+| `CapturedRoomRenderer.tsx` | Orchestrates all CapturedRoom geometry |
+
+**Key Features**:
+- Full CapturedRoom JSON parsing (surfaces, objects, floors)
+- 4x4 column-major transform matrix support
+- Category-based furniture colors (table=indigo, chair=violet, sofa=pink, storage=amber)
+- Furniture collision avoidance for demo occupants
+- Backward compatible with simple RoomPlan format
+- StatsOverlay shows "RoomPlan" badge with surface/object counts
+
+**Data Flow**:
+```
+iPhone RoomPlan Scan → CapturedRoom JSON → POST /api/setup/roomplan
+                                                    ↓
+                              Frontend Parser → 3D Visualization
+                                                    ↓
+                                      Tracked Occupants (real-time)
+```
+
+**Demo Mode**:
+- Mock office: 4 walls, 1 door, 2 windows, 7 furniture items
+- Simulated occupants walk around avoiding furniture bounds
+- Access at `/demo` route
+
+---
+
 #### RS-1 Complete Sensor Fusion Implementation (2024-12-22)
 
 Complete implementation of sensor fusion, WorldState streaming, and RoomPlan API for the OpticWorks RS-1 product.

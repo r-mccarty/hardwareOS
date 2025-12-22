@@ -6,8 +6,8 @@
  * the Zustand store.
  */
 import { useEffect, useRef } from "react";
-import { useRTCStore, useWorldStateStore } from "./stores";
 import type { WorldStateMessage } from "@/types/worldstate";
+import { useRTCStore, useWorldStateStore } from "./stores";
 
 export function useWorldState() {
   const { peerConnection, peerConnectionState } = useRTCStore();

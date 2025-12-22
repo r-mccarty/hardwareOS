@@ -2,6 +2,7 @@
  * Main 3D visualization scene for RS-1 occupancy tracking
  *
  * Tesla FSD-style visualization showing tracked people in a room.
+ * Supports both simple RoomPlan format and Apple CapturedRoom 3D geometry.
  */
 /* eslint-disable react/no-unknown-property */
 import { Canvas } from "@react-three/fiber";
@@ -12,6 +13,7 @@ import { useWorldStateDemo } from "@/hooks/useWorldStateDemo";
 import { useRoomPlanStore } from "@/hooks/stores";
 import { RoomFloor } from "./Room/RoomFloor";
 import { RoomBoundary } from "./Room/RoomBoundary";
+import { CapturedRoomRenderer } from "./Room/CapturedRoomRenderer";
 import { OccupantManager } from "./Occupants/OccupantManager";
 import { SensorIndicator } from "./Sensor/SensorIndicator";
 import { CameraController } from "./Camera/CameraController";
@@ -46,6 +48,9 @@ export function Scene({ deviceUrl, demo = false }: SceneProps) {
   const cameraY = Math.max(roomWidth, roomHeight) * 1.2;
   const cameraZ = Math.max(roomWidth, roomHeight) * 0.8;
 
+  // Check if CapturedRoom data is available for 3D room rendering
+  const hasCapturedRoom = roomPlan?.hasCapturedRoom ?? false;
+
   return (
     <div className="relative h-full w-full bg-slate-950">
       <Canvas
@@ -67,8 +72,19 @@ export function Scene({ deviceUrl, demo = false }: SceneProps) {
         <directionalLight position={[-10, 15, -10]} intensity={0.3} />
 
         <Suspense fallback={null}>
-          <RoomFloor />
-          <RoomBoundary />
+          {/* Room geometry - use CapturedRoom 3D or simple 2D boundary */}
+          {hasCapturedRoom ? (
+            <>
+              <CapturedRoomRenderer />
+              <RoomFloor />
+            </>
+          ) : (
+            <>
+              <RoomFloor />
+              <RoomBoundary />
+            </>
+          )}
+
           <SensorIndicator />
           <OccupantManager />
         </Suspense>

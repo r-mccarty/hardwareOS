@@ -38,7 +38,6 @@ import {
 import { JsonRpcRequest, JsonRpcResponse, RpcMethodNotFound, useJsonRpc } from "@hooks/useJsonRpc";
 import { useDeviceUiNavigation } from "@hooks/useAppNavigation";
 import { useVersion } from "@hooks/useVersion";
-import WebRTCVideo from "@components/WebRTCVideo";
 import { Scene } from "@components/visualization/Scene";
 import DashboardNavbar from "@components/Header";
 const ConnectionStatsSidebar = lazy(() => import("@components/sidebar/connectionStats"));
@@ -961,9 +960,7 @@ export default function KvmIdRoute() {
           />
 
           <div className="relative flex h-full w-full overflow-hidden">
-            {isFailsafeMode && failsafeReason === "video" ? null : (
-              <Scene />
-            )}
+            {isFailsafeMode && failsafeReason === "video" ? null : <Scene />}
             <div
               style={{ animationDuration: "500ms" }}
               className="pointer-events-none absolute inset-0 flex animate-slideUpFade items-center justify-center p-4"
