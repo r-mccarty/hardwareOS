@@ -2,6 +2,24 @@
 
 The RS-1 vision pipeline captures frames from the SC3336 MIPI sensor, applies lens distortion correction, runs YOLOv8 inference on the NPU, and streams H.265 video via WebRTC.
 
+## Implementation Status
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| Camera (V4L2) | ✅ Spike Complete | `targets/rv1106/native/cgo/camera.c` |
+| ISP (LDCH) | ✅ Spike Complete | `targets/rv1106/native/cgo/isp.c` |
+| NPU (RKNN) | ✅ Spike Complete | `targets/rv1106/native/cgo/npu.c` |
+| Pipeline Orchestrator | ✅ Spike Complete | `targets/rv1106/native/cgo/vision_pipeline.c` |
+| Go Bindings | ✅ Spike Complete | `targets/rv1106/native/vision*.go` |
+| Proto Messages | ✅ Complete | `targets/rv1106/native/proto/native.proto` |
+| RGA Integration | ⏳ Pending | Requires Rockchip SDK |
+| H.265 Encoder (MPP) | ⏳ Pending | Requires Rockchip SDK |
+| WebRTC Integration | ⏳ Pending | Depends on encoder |
+
+> **Note**: The spike implementation uses stub functions for SDK-dependent code (RKAIQ, RKNN, RGA, MPP). Production implementation requires the Rockchip SDK libraries.
+
+---
+
 ## Hardware Components
 
 ### SC3336 MIPI Sensor
@@ -78,9 +96,15 @@ Track
 
 ## Implementation Files
 
-### `internal/native/cgo/camera.c`
+> **Note**: Files are located in `targets/rv1106/native/` (not `internal/native/` as originally planned).
 
-Initializes the SC3336 MIPI sensor via V4L2.
+### `cgo/camera.c` / `cgo/camera.h`
+
+Initializes the SC3336 MIPI sensor via V4L2. Key features:
+- V4L2 MMAP buffer management with 4 capture buffers
+- Async frame capture with callback delivery
+- Exposure/gain/orientation control APIs
+- Thread-safe with mutex protection
 
 ```c
 #include <linux/videodev2.h>
@@ -372,7 +396,76 @@ rknn.export_rknn('yolov8n.rknn')
 
 ---
 
+## Pipeline Orchestrator
+
+### `cgo/vision_pipeline.c` / `cgo/vision_pipeline.h`
+
+The pipeline orchestrator coordinates all components:
+
+```c
+// Initialize pipeline with configuration
+vision_pipeline_config_t config = {
+    .camera_width = 2304,
+    .camera_height = 1296,
+    .camera_fps = 30,
+    .ldch_enabled = true,
+    .ldch_level = 255,  // Full cylindrical projection
+    .model_path = "/userdata/models/yolov8n.rknn",
+    .confidence_threshold = 0.5f,
+    .encode_width = 1920,
+    .encode_height = 1080,
+    .bitrate_kbps = 1500,
+    .use_h265 = true,
+};
+
+vision_pipeline_init(&config);
+vision_pipeline_start(video_callback, detection_callback, user_data);
+```
+
+---
+
+## Go Bindings
+
+### `vision.go`
+
+High-level Go interface for the vision pipeline:
+
+```go
+// Create and configure pipeline
+config := native.DefaultVisionPipelineConfig()
+config.ConfidenceThreshold = 0.6
+config.PersonOnly = true
+
+pipeline := native.NewVisionPipeline(&config)
+pipeline.Initialize()
+
+// Start with callbacks
+pipeline.Start(
+    func(data []byte, ts int64, keyframe bool) {
+        // Handle encoded video frame
+    },
+    func(frame *native.VisionFrame) {
+        // Handle NPU detections
+        for _, det := range frame.Detections {
+            fmt.Printf("Detected %s at %.1f° azimuth\n",
+                native.GetClassName(det.ClassID),
+                det.AzimuthDeg)
+        }
+    },
+)
+```
+
+### `vision_cgo_linux.go`
+
+CGO bindings with channel-based async delivery:
+- Callbacks from C are converted to Go channel messages
+- Non-blocking delivery with frame dropping on backpressure
+- Thread-safe with `cgoLock` synchronization
+
+---
+
 ## See Also
 
 - [RS1_ARCHITECTURE.md](RS1_ARCHITECTURE.md) - System overview
 - [FUSION_ENGINE.md](FUSION_ENGINE.md) - How vision detections are fused with radar
+- [CHANGELOG.md](../../CHANGELOG.md) - Implementation history
