@@ -22,16 +22,19 @@ func Init() (*RS1Product, error) {
 		config: DefaultConfig(),
 	}
 
-	// Initialize radar
+	// Initialize fusion engine first (other components depend on it)
+	product.fusion = NewFusionEngine()
+
+	// Initialize radar and connect to fusion
 	radar, err := NewRadarManager(product.config.RadarConfig)
 	if err != nil {
 		logger.Warn().Err(err).Msg("failed to initialize radar")
 	} else {
+		// Wire radar to fusion engine
+		radar.SetFusionEngine(product.fusion.GetEngine())
 		product.radar = radar
+		logger.Info().Msg("radar connected to fusion engine")
 	}
-
-	// Initialize fusion engine
-	product.fusion = NewFusionEngine()
 
 	// Initialize world state
 	product.world = NewWorldState()

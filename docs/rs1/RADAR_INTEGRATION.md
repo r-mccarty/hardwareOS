@@ -2,6 +2,27 @@
 
 The RS-1 uses the HiLink LD2450 24GHz mmWave radar for range and velocity measurement. This document covers the UART protocol, parsing implementation, and integration with the fusion engine.
 
+## Implementation Status
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| LD2450 UART Parser | ✅ Implemented | `products/rs1/radar/ld2450.go` |
+| Polar Coordinate Calculation | ✅ Implemented | `Target.CalculatePolar()` |
+| Fusion Engine Integration | ✅ Implemented | `products/rs1/radar.go` |
+| Unit Tests | ✅ Implemented | `products/rs1/radar/ld2450_test.go` |
+| Prometheus Metrics | ⏳ Planned | - |
+| Configuration Commands | ⏳ Planned | - |
+
+### Recent Changes
+
+**2024-12-22: Radar Integration Spike**
+- Enhanced LD2450 parser with polar coordinate calculation (Range/Azimuth from X/Y)
+- Connected RadarManager to FusionEngine via `SetFusionEngine()`
+- RadarManager converts radar `Target` to fusion `Detection` objects
+- Added confidence calculation based on range and target movement
+- Added processing statistics (frames processed, targets detected)
+- Added comprehensive unit tests for polar calculations and frame parsing
+
 ## Hardware Specifications
 
 ### HLK-LD2450
@@ -80,296 +101,122 @@ Each frame contains up to 3 target reports.
 
 ## Go Implementation
 
-### `internal/radar/types.go`
+> **Note**: The actual implementation is in `products/rs1/radar/` rather than `internal/radar/`.
+> See source files for the authoritative implementation.
+
+### `products/rs1/radar/ld2450.go`
+
+Core types and UART parser:
 
 ```go
 package radar
 
-import (
-    "math"
-    "time"
-)
+// Target represents a single detected target from the LD2450
+type Target struct {
+    X        int16   // X position in mm (relative to sensor, positive = right)
+    Y        int16   // Y position in mm (forward from sensor)
+    Speed    int16   // Speed in cm/s (positive = approaching)
+    Distance uint16  // Distance from sensor in mm (calculated)
+    Valid    bool    // Whether this target slot contains valid data
 
-// RadarTarget represents a single detected target
-type RadarTarget struct {
-    X         int16     // X position in mm
-    Y         int16     // Y position in mm
-    Speed     int16     // Radial velocity in cm/s
-    Azimuth   float64   // Calculated angle in degrees
-    Range     float64   // Calculated distance in meters
-    Timestamp time.Time // Detection timestamp
+    // Polar coordinates (calculated from X/Y)
+    Range   float64 // Distance in meters
+    Azimuth float64 // Angle in degrees (0 = forward, positive = right)
 }
 
-// RadarFrame represents a complete radar scan
-type RadarFrame struct {
-    Targets   []RadarTarget
-    Timestamp time.Time
-    FrameNum  uint32
-}
-
-// CalculatePolar computes azimuth and range from Cartesian coordinates
-func (t *RadarTarget) CalculatePolar() {
+// CalculatePolar computes Range and Azimuth from Cartesian X/Y coordinates
+func (t *Target) CalculatePolar() {
     xMeters := float64(t.X) / 1000.0
     yMeters := float64(t.Y) / 1000.0
 
     t.Range = math.Sqrt(xMeters*xMeters + yMeters*yMeters)
     t.Azimuth = math.Atan2(xMeters, yMeters) * 180.0 / math.Pi
+    t.Distance = uint16(t.Range * 1000) // Store in mm for compatibility
 }
+
+// Frame represents a complete LD2450 data frame
+type Frame struct {
+    Targets   [3]Target  // Fixed array of 3 targets (LD2450 max)
+    Timestamp time.Time
+}
+
+// ValidTargets returns a slice containing only valid targets from the frame
+func (f *Frame) ValidTargets() []Target {
+    targets := make([]Target, 0, 3)
+    for _, t := range f.Targets {
+        if t.Valid {
+            targets = append(targets, t)
+        }
+    }
+    return targets
+}
+
+// LD2450 handles communication with the LD2450 mmWave radar sensor
+type LD2450 struct {
+    // ... (see source for full implementation)
+}
+
+// Frames returns a channel that receives parsed radar frames
+func (r *LD2450) Frames() <-chan Frame
+
+// LastFrame returns the most recent frame
+func (r *LD2450) LastFrame() Frame
 ```
 
-### `internal/radar/ld2450.go`
+### `products/rs1/radar.go`
+
+RadarManager connects the LD2450 to the fusion engine:
 
 ```go
-package radar
+package rs1
 
-import (
-    "encoding/binary"
-    "fmt"
-    "io"
-    "time"
-
-    "go.bug.st/serial"
-)
-
-const (
-    headerByte0   = 0xAA
-    headerByte1   = 0xFF
-    headerByte2   = 0x03
-    headerByte3   = 0x00
-    tailByte0     = 0x55
-    tailByte1     = 0xCC
-    maxTargets    = 3
-    targetSize    = 8
-    baudRate      = 256000
-)
-
-// LD2450 represents the radar sensor interface
-type LD2450 struct {
-    port      serial.Port
-    frameNum  uint32
-    onFrame   func(RadarFrame)
-    stopChan  chan struct{}
+// RadarManager wraps the LD2450 radar and converts to RS-1 coordinate system
+type RadarManager struct {
+    ld2450  *radar.LD2450
+    config  *RadarConfig
+    fusion  *fusion.Engine
+    // ... stats tracking
 }
 
-// NewLD2450 creates a new radar interface
-func NewLD2450(portPath string) (*LD2450, error) {
-    mode := &serial.Mode{
-        BaudRate: baudRate,
-        DataBits: 8,
-        Parity:   serial.NoParity,
-        StopBits: serial.OneStopBit,
-    }
+// SetFusionEngine connects the radar manager to a fusion engine
+func (rm *RadarManager) SetFusionEngine(engine *fusion.Engine)
 
-    port, err := serial.Open(portPath, mode)
-    if err != nil {
-        return nil, fmt.Errorf("failed to open serial port: %w", err)
-    }
+// Start begins radar data acquisition
+func (rm *RadarManager) Start() error
 
-    return &LD2450{
-        port:     port,
-        stopChan: make(chan struct{}),
-    }, nil
-}
+// handleFrame processes a single radar frame and submits to fusion
+func (rm *RadarManager) handleFrame(frame radar.Frame) {
+    validTargets := frame.ValidTargets()
+    detections := make([]fusion.Detection, 0, len(validTargets))
 
-// SetFrameCallback registers a callback for new frames
-func (r *LD2450) SetFrameCallback(cb func(RadarFrame)) {
-    r.onFrame = cb
-}
-
-// Start begins reading radar data
-func (r *LD2450) Start() {
-    go r.readLoop()
-}
-
-// Stop stops the radar reader
-func (r *LD2450) Stop() {
-    close(r.stopChan)
-    r.port.Close()
-}
-
-func (r *LD2450) readLoop() {
-    buf := make([]byte, 256)
-    ringBuf := make([]byte, 0, 512)
-
-    for {
-        select {
-        case <-r.stopChan:
-            return
-        default:
-        }
-
-        n, err := r.port.Read(buf)
-        if err != nil {
-            if err != io.EOF {
-                logger.Error().Err(err).Msg("radar read error")
-            }
+    for i, target := range validTargets {
+        if target.Range > rm.config.MaxRange {
             continue
         }
 
-        ringBuf = append(ringBuf, buf[:n]...)
-
-        // Process complete frames
-        for {
-            frame, consumed := r.parseFrame(ringBuf)
-            if consumed == 0 {
-                break
-            }
-            ringBuf = ringBuf[consumed:]
-
-            if frame != nil && r.onFrame != nil {
-                r.onFrame(*frame)
-            }
+        det := fusion.Detection{
+            ID:         fmt.Sprintf("radar_%d_%d", frame.Timestamp.UnixNano(), i),
+            X:          float64(target.X) / 1000.0, // mm to meters
+            Y:          float64(target.Y) / 1000.0,
+            Confidence: rm.calculateConfidence(target),
+            Source:     fusion.SourceRadar,
+            Timestamp:  frame.Timestamp,
         }
+        detections = append(detections, det)
+    }
 
-        // Prevent buffer overflow
-        if len(ringBuf) > 256 {
-            ringBuf = ringBuf[len(ringBuf)-256:]
-        }
+    if rm.fusion != nil && len(detections) > 0 {
+        rm.fusion.SubmitRadarDetections(detections)
     }
 }
 
-func (r *LD2450) parseFrame(data []byte) (*RadarFrame, int) {
-    // Find header
-    headerIdx := -1
-    for i := 0; i <= len(data)-4; i++ {
-        if data[i] == headerByte0 && data[i+1] == headerByte1 &&
-           data[i+2] == headerByte2 && data[i+3] == headerByte3 {
-            headerIdx = i
-            break
-        }
-    }
-
-    if headerIdx < 0 {
-        return nil, 0
-    }
-
-    // Skip bytes before header
-    if headerIdx > 0 {
-        return nil, headerIdx
-    }
-
-    // Check minimum frame length
-    if len(data) < 10 { // header(4) + length(2) + count(1) + checksum(1) + tail(2)
-        return nil, 0
-    }
-
-    // Parse length
-    payloadLen := int(binary.LittleEndian.Uint16(data[4:6]))
-    frameLen := 4 + 2 + payloadLen + 1 + 2 // header + length + payload + checksum + tail
-
-    if len(data) < frameLen {
-        return nil, 0 // Incomplete frame
-    }
-
-    // Verify tail
-    if data[frameLen-2] != tailByte0 || data[frameLen-1] != tailByte1 {
-        return nil, 1 // Invalid frame, skip one byte
-    }
-
-    // Verify checksum
-    checksum := byte(0)
-    for i := 6; i < frameLen-3; i++ {
-        checksum ^= data[i]
-    }
-    if checksum != data[frameLen-3] {
-        return nil, 1 // Checksum mismatch
-    }
-
-    // Parse targets
-    targetCount := int(data[6])
-    if targetCount > maxTargets {
-        targetCount = maxTargets
-    }
-
-    frame := &RadarFrame{
-        Targets:   make([]RadarTarget, 0, targetCount),
-        Timestamp: time.Now(),
-        FrameNum:  r.frameNum,
-    }
-    r.frameNum++
-
-    for i := 0; i < targetCount; i++ {
-        offset := 7 + i*targetSize
-        if offset+targetSize > frameLen-3 {
-            break
-        }
-
-        target := RadarTarget{
-            X:         int16(binary.LittleEndian.Uint16(data[offset:])),
-            Y:         int16(binary.LittleEndian.Uint16(data[offset+2:])),
-            Speed:     int16(binary.LittleEndian.Uint16(data[offset+4:])),
-            Timestamp: frame.Timestamp,
-        }
-        target.CalculatePolar()
-        frame.Targets = append(frame.Targets, target)
-    }
-
-    return frame, frameLen
-}
-```
-
-### `internal/radar/state.go`
-
-Provides thread-safe access to the latest radar frame for the fusion engine.
-
-```go
-package radar
-
-import (
-    "sync"
-    "time"
-)
-
-const staleThreshold = 200 * time.Millisecond
-
-// State maintains the latest radar frame with thread-safe access
-type State struct {
-    mu          sync.RWMutex
-    latestFrame *RadarFrame
-    updatedAt   time.Time
-}
-
-// NewState creates a new radar state holder
-func NewState() *State {
-    return &State{}
-}
-
-// Update stores a new radar frame
-func (s *State) Update(frame RadarFrame) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
-    s.latestFrame = &frame
-    s.updatedAt = time.Now()
-}
-
-// GetLatest returns the latest frame if not stale
-// Returns nil if no frame or frame is too old
-func (s *State) GetLatest() *RadarFrame {
-    s.mu.RLock()
-    defer s.mu.RUnlock()
-
-    if s.latestFrame == nil {
-        return nil
-    }
-
-    if time.Since(s.updatedAt) > staleThreshold {
-        return nil // Data too old
-    }
-
-    // Return a copy to prevent race conditions
-    frameCopy := *s.latestFrame
-    targetsCopy := make([]RadarTarget, len(s.latestFrame.Targets))
-    copy(targetsCopy, s.latestFrame.Targets)
-    frameCopy.Targets = targetsCopy
-
-    return &frameCopy
-}
-
-// IsStale returns true if radar data is outdated
-func (s *State) IsStale() bool {
-    s.mu.RLock()
-    defer s.mu.RUnlock()
-    return s.latestFrame == nil || time.Since(s.updatedAt) > staleThreshold
+// calculateConfidence uses range and movement heuristics
+// (LD2450 doesn't provide signal strength)
+func (rm *RadarManager) calculateConfidence(target radar.Target) float64 {
+    confidence := 0.8
+    if target.Range > 4.0 { confidence -= 0.1 }
+    if target.Speed != 0  { confidence += 0.1 }  // Doppler works better
+    return clamp(confidence, 0.1, 1.0)
 }
 ```
 
@@ -377,44 +224,73 @@ func (s *State) IsStale() bool {
 
 ## Integration with Main Application
 
-### Initialization in `main.go`
+### Initialization in `products/rs1/init.go`
+
+The RS-1 product initializes components in dependency order:
 
 ```go
-var radarState *radar.State
-
-func initRadar() error {
-    radarState = radar.NewState()
-
-    ld2450, err := radar.NewLD2450(config.RadarConfig.UartPath)
-    if err != nil {
-        return fmt.Errorf("failed to initialize radar: %w", err)
+// Init initializes the RS-1 product
+func Init() (*RS1Product, error) {
+    product := &RS1Product{
+        config: DefaultConfig(),
     }
 
-    ld2450.SetFrameCallback(func(frame radar.RadarFrame) {
-        radarState.Update(frame)
+    // Initialize fusion engine first (other components depend on it)
+    product.fusion = NewFusionEngine()
 
-        // Optional: emit metrics
-        radarFramesTotal.Inc()
-        for _, t := range frame.Targets {
-            radarTargetDistance.Observe(t.Range)
-        }
-    })
+    // Initialize radar and connect to fusion
+    radar, err := NewRadarManager(product.config.RadarConfig)
+    if err != nil {
+        logger.Warn().Err(err).Msg("failed to initialize radar")
+    } else {
+        // Wire radar to fusion engine
+        radar.SetFusionEngine(product.fusion.GetEngine())
+        product.radar = radar
+    }
 
-    ld2450.Start()
-    logger.Info().Str("port", config.RadarConfig.UartPath).Msg("radar initialized")
-    return nil
+    // Initialize world state
+    product.world = NewWorldState()
+
+    return product, nil
 }
 ```
 
 ### Configuration
 
 ```go
+// RadarConfig defines radar parameters (products/rs1/config.go)
 type RadarConfig struct {
-    UartPath   string  `json:"uart_path"`    // e.g., "/dev/ttyS0"
-    BaudRate   int     `json:"baud_rate"`    // 256000
-    MaxRangeM  float64 `json:"max_range_m"`  // 6.0
-    Enabled    bool    `json:"enabled"`      // true
+    Enabled      bool    `json:"enabled"`        // Enable radar sensor
+    MaxRange     float64 `json:"max_range"`      // Maximum detection range (meters)
+    Sensitivity  float64 `json:"sensitivity"`    // Detection sensitivity 0-1
+    UpdateRateHz int     `json:"update_rate_hz"` // Target update rate
 }
+
+// Default: Enabled=true, MaxRange=6.0, Sensitivity=0.5, UpdateRateHz=10
+```
+
+### Data Flow
+
+```
+LD2450 UART (/dev/ttyS3)
+    │
+    ▼
+LD2450.readLoop()
+    │ parseData() → parseFrame() → CalculatePolar()
+    ▼
+Frame channel (buffered, 10 frames)
+    │
+    ▼
+RadarManager.processFrames()
+    │ handleFrame() → calculateConfidence()
+    ▼
+fusion.Engine.SubmitRadarDetections()
+    │
+    ▼
+FusionEngine.processRadarDetections()
+    │ findNearestObject() → updateObjectWithRadar()
+    ▼
+WorldState (occupants updated)
 ```
 
 ---

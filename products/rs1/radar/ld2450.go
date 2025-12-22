@@ -1,10 +1,13 @@
-// Package radar implements radar sensor communication.
+// Package radar implements radar sensor communication for the HLK-LD2450 24GHz mmWave radar.
+// The LD2450 provides up to 3 simultaneous target tracking with range (0.2-6m),
+// velocity measurement via Doppler, and ±60° horizontal coverage.
 package radar
 
 import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"math"
 	"sync"
 	"time"
 
@@ -16,8 +19,12 @@ var logger = logging.GetSubsystemLogger("radar")
 
 const (
 	// LD2450 frame markers
-	frameHeader = 0xAA
-	frameTail   = 0x55CC
+	headerByte0 = 0xAA
+	headerByte1 = 0xFF
+	headerByte2 = 0x03
+	headerByte3 = 0x00
+	tailByte0   = 0x55
+	tailByte1   = 0xCC
 
 	// Serial port settings
 	defaultBaudRate = 256000
@@ -25,15 +32,32 @@ const (
 
 	// Maximum targets the LD2450 can track
 	maxTargets = 3
+
+	// Target data size in bytes
+	targetSize = 8
 )
 
 // Target represents a single detected target from the LD2450
 type Target struct {
-	X        int16   // X position in mm (relative to sensor)
-	Y        int16   // Y position in mm (relative to sensor)
-	Speed    int16   // Speed in mm/s (positive = approaching)
-	Distance uint16  // Distance from sensor in mm
+	X        int16   // X position in mm (relative to sensor, positive = right)
+	Y        int16   // Y position in mm (forward from sensor)
+	Speed    int16   // Speed in cm/s (positive = approaching)
+	Distance uint16  // Distance from sensor in mm (calculated)
 	Valid    bool    // Whether this target slot contains valid data
+
+	// Polar coordinates (calculated from X/Y)
+	Range   float64 // Distance in meters
+	Azimuth float64 // Angle in degrees (0 = forward, positive = right)
+}
+
+// CalculatePolar computes Range and Azimuth from Cartesian X/Y coordinates
+func (t *Target) CalculatePolar() {
+	xMeters := float64(t.X) / 1000.0
+	yMeters := float64(t.Y) / 1000.0
+
+	t.Range = math.Sqrt(xMeters*xMeters + yMeters*yMeters)
+	t.Azimuth = math.Atan2(xMeters, yMeters) * 180.0 / math.Pi
+	t.Distance = uint16(t.Range * 1000) // Store in mm for compatibility
 }
 
 // Frame represents a complete LD2450 data frame
@@ -163,16 +187,17 @@ func (r *LD2450) readLoop() {
 // parseData parses raw bytes looking for valid LD2450 frames
 // LD2450 frame format:
 // Header (4 bytes): 0xAA 0xFF 0x03 0x00
-// Target 1 (8 bytes): X(2) Y(2) Speed(2) Resolution(2)
-// Target 2 (8 bytes): X(2) Y(2) Speed(2) Resolution(2)
-// Target 3 (8 bytes): X(2) Y(2) Speed(2) Resolution(2)
+// Target 1 (8 bytes): X(2) Y(2) Speed(2) Reserved(2)
+// Target 2 (8 bytes): X(2) Y(2) Speed(2) Reserved(2)
+// Target 3 (8 bytes): X(2) Y(2) Speed(2) Reserved(2)
 // Tail (2 bytes): 0x55 0xCC
 func (r *LD2450) parseData(data []byte) {
-	// Simplified parsing - look for frame header
+	// Look for frame header: 0xAA 0xFF 0x03 0x00
 	for i := 0; i < len(data)-29; i++ {
-		if data[i] == 0xAA && data[i+1] == 0xFF && data[i+2] == 0x03 && data[i+3] == 0x00 {
-			// Check tail
-			if data[i+28] == 0x55 && data[i+29] == 0xCC {
+		if data[i] == headerByte0 && data[i+1] == headerByte1 &&
+			data[i+2] == headerByte2 && data[i+3] == headerByte3 {
+			// Check tail: 0x55 0xCC
+			if data[i+28] == tailByte0 && data[i+29] == tailByte1 {
 				frame := r.parseFrame(data[i+4 : i+28])
 				r.mu.Lock()
 				r.lastFrame = frame
@@ -196,17 +221,31 @@ func (r *LD2450) parseFrame(data []byte) Frame {
 	}
 
 	for i := 0; i < maxTargets; i++ {
-		offset := i * 8
+		offset := i * targetSize
 		target := Target{
-			X:        int16(binary.LittleEndian.Uint16(data[offset : offset+2])),
-			Y:        int16(binary.LittleEndian.Uint16(data[offset+2 : offset+4])),
-			Speed:    int16(binary.LittleEndian.Uint16(data[offset+4 : offset+6])),
-			Distance: binary.LittleEndian.Uint16(data[offset+6 : offset+8]),
+			X:     int16(binary.LittleEndian.Uint16(data[offset : offset+2])),
+			Y:     int16(binary.LittleEndian.Uint16(data[offset+2 : offset+4])),
+			Speed: int16(binary.LittleEndian.Uint16(data[offset+4 : offset+6])),
+			// bytes 6-7 are reserved
 		}
 		// Target is valid if X or Y is non-zero
 		target.Valid = target.X != 0 || target.Y != 0
+		if target.Valid {
+			target.CalculatePolar()
+		}
 		frame.Targets[i] = target
 	}
 
 	return frame
+}
+
+// ValidTargets returns a slice containing only valid targets from the frame
+func (f *Frame) ValidTargets() []Target {
+	targets := make([]Target, 0, maxTargets)
+	for _, t := range f.Targets {
+		if t.Valid {
+			targets = append(targets, t)
+		}
+	}
+	return targets
 }
