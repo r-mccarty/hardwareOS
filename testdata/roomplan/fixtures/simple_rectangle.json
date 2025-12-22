@@ -1,0 +1,78 @@
+{
+  "identifier": "test-simple-rectangle",
+  "surfaces": [
+    {
+      "identifier": "wall-north",
+      "category": "wall",
+      "dimensions": [5.0, 2.4, 0.15],
+      "transform": [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        2.5, 1.2, 4.0, 1
+      ],
+      "confidence": "high"
+    },
+    {
+      "identifier": "wall-south",
+      "category": "wall",
+      "dimensions": [5.0, 2.4, 0.15],
+      "transform": [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        2.5, 1.2, 0.0, 1
+      ],
+      "confidence": "high"
+    },
+    {
+      "identifier": "wall-east",
+      "category": "wall",
+      "dimensions": [4.0, 2.4, 0.15],
+      "transform": [
+        0, 0, 1, 0,
+        0, 1, 0, 0,
+        -1, 0, 0, 0,
+        5.0, 1.2, 2.0, 1
+      ],
+      "confidence": "high"
+    },
+    {
+      "identifier": "wall-west",
+      "category": "wall",
+      "dimensions": [4.0, 2.4, 0.15],
+      "transform": [
+        0, 0, 1, 0,
+        0, 1, 0, 0,
+        -1, 0, 0, 0,
+        0.0, 1.2, 2.0, 1
+      ],
+      "confidence": "high"
+    },
+    {
+      "identifier": "door-main",
+      "category": "door",
+      "dimensions": [0.9, 2.1, 0.1],
+      "transform": [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        1.0, 1.05, 0.0, 1
+      ],
+      "confidence": "medium",
+      "parent": "wall-south"
+    }
+  ],
+  "objects": [],
+  "floors": [
+    {
+      "identifier": "floor-main",
+      "polygonCorners": [
+        [0, 0, 0],
+        [5, 0, 0],
+        [5, 0, 4],
+        [0, 0, 4]
+      ]
+    }
+  ]
+}
