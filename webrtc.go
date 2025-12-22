@@ -18,10 +18,11 @@ import (
 )
 
 type Session struct {
-	peerConnection *webrtc.PeerConnection
-	VideoTrack     *webrtc.TrackLocalStaticSample
-	ControlChannel *webrtc.DataChannel
-	RPCChannel     *webrtc.DataChannel
+	peerConnection    *webrtc.PeerConnection
+	VideoTrack        *webrtc.TrackLocalStaticSample
+	ControlChannel    *webrtc.DataChannel
+	RPCChannel        *webrtc.DataChannel
+	WorldStateChannel *webrtc.DataChannel // RS-1: WorldState streaming channel
 
 	rpcQueue chan webrtc.DataChannelMessage
 
@@ -81,6 +82,12 @@ func (s *Session) GetDiagnosticsInfo() diagnostics.SessionInfo {
 			channels = append(channels, diagnostics.DataChannelInfo{
 				Label: s.RPCChannel.Label(),
 				State: s.RPCChannel.ReadyState().String(),
+			})
+		}
+		if s.WorldStateChannel != nil {
+			channels = append(channels, diagnostics.DataChannelInfo{
+				Label: s.WorldStateChannel.Label(),
+				State: s.WorldStateChannel.ReadyState().String(),
 			})
 		}
 		info.DataChannels = channels
@@ -212,6 +219,16 @@ func newSession(config SessionConfig) (*Session, error) {
 			handleTerminalChannel(d)
 		case "serial":
 			handleSerialChannel(d)
+		case "worldstate":
+			session.WorldStateChannel = d
+			d.OnOpen(func() {
+				scopedLogger.Debug().Msg("worldstate channel opened")
+				go session.streamWorldState()
+			})
+			d.OnClose(func() {
+				scopedLogger.Debug().Msg("worldstate channel closed")
+				session.WorldStateChannel = nil
+			})
 		}
 	})
 

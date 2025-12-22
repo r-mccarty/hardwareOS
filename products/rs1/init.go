@@ -36,8 +36,9 @@ func Init() (*RS1Product, error) {
 		logger.Info().Msg("radar connected to fusion engine")
 	}
 
-	// Initialize world state
+	// Initialize world state and connect to fusion engine
 	product.world = NewWorldState()
+	product.world.SetFusionEngine(product.fusion.GetEngine())
 
 	logger.Info().Msg("RS-1 product initialized")
 	return product, nil
@@ -86,4 +87,9 @@ func (p *RS1Product) GetConfig() *RS1Config {
 // GetWorldState returns the current world state
 func (p *RS1Product) GetWorldState() *WorldState {
 	return p.world
+}
+
+// GetFusionEngine returns the fusion engine wrapper
+func (p *RS1Product) GetFusionEngine() *FusionEngine {
+	return p.fusion
 }

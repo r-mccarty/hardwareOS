@@ -385,3 +385,47 @@ message NpuSetConfidenceThresholdRequest {
   float threshold = 1;  // 0.0-1.0
 }
 
+// =============================================================================
+// RS-1 WorldState Streaming Messages
+// =============================================================================
+
+// TrackedObject represents a single tracked entity after sensor fusion
+message TrackedObject {
+  // Unique track ID (stable across frames)
+  int32 track_id = 1;
+
+  // Position in room coordinates (meters)
+  float x = 2;
+  float y = 3;
+
+  // Velocity (meters/second)
+  float vx = 4;
+  float vy = 5;
+
+  // Classification
+  int32 class_id = 6;     // -1=unknown, 0=person, 1=vehicle, 2=animal
+  float confidence = 7;   // Detection confidence (0.0-1.0)
+
+  // Sensor contribution
+  bool is_radar_only = 8;   // True if only radar detects this object
+  bool is_vision_only = 9;  // True if only camera detects this object
+
+  // Derived motion
+  float heading = 10;  // Movement direction (degrees, 0=+Y/forward)
+  float speed = 11;    // Speed magnitude (m/s)
+}
+
+// WorldStateProto represents the complete tracked environment
+message WorldStateProto {
+  // All currently tracked objects
+  repeated TrackedObject objects = 1;
+
+  // Timing
+  int64 timestamp_ns = 2;    // Unix nanoseconds
+  uint64 frame_number = 3;   // Monotonic frame counter
+
+  // Sensor diagnostics
+  int32 radar_targets = 4;      // Raw radar target count
+  int32 vision_detections = 5;  // Raw vision detection count
+  float fusion_latency_ms = 6;  // Processing latency
+}

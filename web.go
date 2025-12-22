@@ -186,6 +186,10 @@ func setupRouter() *gin.Engine {
 		protected.DELETE("/auth/local-password", handleDeletePassword)
 
 		protected.POST("/device/send-wol/:mac-addr", handleSendWOLMagicPacket)
+
+		// RS-1: Room plan configuration
+		protected.POST("/api/setup/roomplan", handleRoomPlanUpload)
+		protected.GET("/api/setup/roomplan", handleGetRoomPlan)
 	}
 
 	// Catch-all route for SPA

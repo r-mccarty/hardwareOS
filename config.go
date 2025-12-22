@@ -45,6 +45,7 @@ type Config struct {
 	VideoSleepAfterSec   int                  `json:"video_sleep_after_sec"`
 	VideoQualityFactor   float64              `json:"video_quality_factor"`
 	NativeMaxRestart     uint                 `json:"native_max_restart_attempts"`
+	RoomConfig           *RoomConfig          `json:"room_config,omitempty"` // RS-1: Room plan configuration
 }
 
 // GetUpdateAPIURL returns the update API URL

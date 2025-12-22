@@ -13,10 +13,13 @@ import (
 	"github.com/gwatts/rootcerts"
 	platformConfig "github.com/jetkvm/kvm/platform/config"
 	"github.com/jetkvm/kvm/platform/ota"
+	"github.com/jetkvm/kvm/products/rs1"
+	"github.com/jetkvm/kvm/products/rs1/fusion"
 )
 
 var appCtx context.Context
 var procPrefix string
+var rs1Product *rs1.RS1Product
 
 func init() {
 	// Set RS-1 as the default product brand
@@ -99,6 +102,31 @@ func Main() {
 		logger.Error().Err(err).Msg("failed to initialize mDNS")
 	}
 
+	// Initialize RS-1 product
+	setProcTitle("initRS1")
+	rs1Product, err = rs1.Init()
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to initialize RS-1 product")
+	} else {
+		// Wire up accessors for kvm package
+		SetRS1WorldStateGetter(func() interface{} {
+			if rs1Product == nil {
+				return nil
+			}
+			return rs1Product.GetWorldState().GetSnapshot()
+		})
+		SetRS1FusionEngineSetter(func(t *fusion.TransformMatrix) {
+			if rs1Product != nil {
+				rs1Product.GetFusionEngine().GetEngine().SetRoomTransform(t)
+			}
+		})
+
+		// Start RS-1 services
+		if err := rs1Product.Start(); err != nil {
+			logger.Error().Err(err).Msg("failed to start RS-1 services")
+		}
+	}
+
 	setProcTitle("initPrometheus")
 	initPrometheus()
 
@@ -159,6 +187,11 @@ func Main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
+
+	// Graceful shutdown
+	if rs1Product != nil {
+		rs1Product.Stop()
+	}
 
 	logger.Log().Str("product", brand.ProductName).Msg("Shutting Down")
 }
