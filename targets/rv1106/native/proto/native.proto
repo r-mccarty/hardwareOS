@@ -47,6 +47,27 @@ service NativeService {
 
   // Events stream
   rpc StreamEvents(Empty) returns (stream Event);
+
+  // ==========================================================================
+  // RS-1 Vision Pipeline Methods
+  // ==========================================================================
+
+  // Vision pipeline control
+  rpc VisionPipelineStart(Empty) returns (Empty);
+  rpc VisionPipelineStop(Empty) returns (Empty);
+  rpc VisionPipelineGetState(Empty) returns (VisionPipelineState);
+
+  // Camera control
+  rpc CameraSetExposure(CameraSetExposureRequest) returns (Empty);
+  rpc CameraSetOrientation(CameraSetOrientationRequest) returns (Empty);
+
+  // ISP control
+  rpc IspSetLdchEnabled(IspSetLdchEnabledRequest) returns (Empty);
+  rpc IspSetLdchLevel(IspSetLdchLevelRequest) returns (Empty);
+
+  // NPU control
+  rpc NpuLoadModel(NpuLoadModelRequest) returns (Empty);
+  rpc NpuSetConfidenceThreshold(NpuSetConfidenceThresholdRequest) returns (Empty);
 }
 
 // Messages
@@ -248,11 +269,119 @@ message Event {
     string indev_event = 3;
     string rpc_event = 4;
     VideoFrame video_frame = 5;
+    VisionFrame vision_frame = 6;           // RS-1: NPU detections
+    VisionPipelineState vision_state = 7;   // RS-1: Pipeline status
   }
 }
 
 message VideoFrame {
   bytes frame = 1;
   int64 duration_ns = 2;
+}
+
+// =============================================================================
+// RS-1 Vision Pipeline Messages
+// =============================================================================
+
+// Vision detection from NPU (YOLOv8)
+message VisionDetection {
+  // Tracking ID assigned by fusion engine (0 = unassigned)
+  int32 track_id = 1;
+
+  // Bounding box (normalized 0-1)
+  float bbox_x = 2;       // Center X
+  float bbox_y = 3;       // Center Y
+  float bbox_width = 4;   // Width
+  float bbox_height = 5;  // Height
+
+  // Classification
+  int32 class_id = 6;     // Object class (COCO: 0=person, 2=car, etc.)
+  float confidence = 7;   // Detection confidence (0-1)
+
+  // Angular position (calculated from LDCH-corrected image)
+  float azimuth_deg = 8;    // Horizontal angle from camera center
+  float elevation_deg = 9;  // Vertical angle from camera center
+}
+
+// Frame of detections from NPU
+message VisionFrame {
+  // Array of detections in this frame
+  repeated VisionDetection detections = 1;
+
+  // Timing
+  int64 timestamp_ns = 2;   // Frame timestamp (nanoseconds since epoch)
+  int32 frame_number = 3;   // Monotonic frame counter
+  int32 inference_ms = 4;   // NPU inference time in milliseconds
+}
+
+// Camera status
+message CameraState {
+  bool initialized = 1;
+  bool streaming = 2;
+  int32 width = 3;
+  int32 height = 4;
+  int32 fps = 5;
+  uint64 frame_count = 6;
+  string error = 7;
+}
+
+// ISP status
+message IspState {
+  bool initialized = 1;
+  bool running = 2;
+  bool ldch_enabled = 3;
+  int32 ldch_level = 4;   // 0-255
+  float exposure_time_ms = 5;
+  float gain = 6;
+  int32 color_temp_k = 7;
+}
+
+// NPU status
+message NpuState {
+  bool initialized = 1;
+  bool model_loaded = 2;
+  string model_path = 3;
+  int32 input_width = 4;
+  int32 input_height = 5;
+  uint64 inference_count = 6;
+  float avg_inference_ms = 7;
+}
+
+// Vision pipeline aggregate status
+message VisionPipelineState {
+  CameraState camera = 1;
+  IspState isp = 2;
+  NpuState npu = 3;
+  bool pipeline_running = 4;
+}
+
+// =============================================================================
+// RS-1 Vision Pipeline Request Messages
+// =============================================================================
+
+message CameraSetExposureRequest {
+  bool auto_exposure = 1;
+  int32 manual_value = 2;  // Ignored if auto_exposure is true
+}
+
+message CameraSetOrientationRequest {
+  bool mirror = 1;  // Horizontal flip
+  bool flip = 2;    // Vertical flip
+}
+
+message IspSetLdchEnabledRequest {
+  bool enabled = 1;
+}
+
+message IspSetLdchLevelRequest {
+  int32 level = 1;  // 0-255, 255 = full cylindrical projection
+}
+
+message NpuLoadModelRequest {
+  string model_path = 1;
+}
+
+message NpuSetConfidenceThresholdRequest {
+  float threshold = 1;  // 0.0-1.0
 }
 
