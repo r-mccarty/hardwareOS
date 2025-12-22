@@ -1,1 +1,1 @@
-Archived. See docs/rs1/DEVELOPMENT.md for current test commands.
+Moved to docs/platform/TESTING.md.

@@ -1,1 +1,1 @@
-Archived. See docs/legacy/NETWORK.md.
+Moved to docs/platform/NETWORK.md.

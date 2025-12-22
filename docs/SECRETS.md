@@ -1,1 +1,1 @@
-Archived. See docs/legacy/SECRETS.md.
+Moved to docs/platform/SECRETS.md.

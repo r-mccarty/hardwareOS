@@ -1,1 +1,1 @@
-Archived. See docs/legacy/PORTING_GUIDE.md.
+Moved to docs/platform/PORTING_GUIDE.md.

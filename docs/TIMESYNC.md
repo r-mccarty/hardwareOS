@@ -1,1 +1,1 @@
-Archived. See docs/legacy/TIMESYNC.md.
+Moved to docs/platform/TIMESYNC.md.

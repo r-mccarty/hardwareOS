@@ -1,1 +1,1 @@
-Archived. See docs/CLOUD_API.md for the current cloud API (signaling is not implemented in v1).
+Moved to docs/platform/CLOUD_SIGNALING.md.

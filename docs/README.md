@@ -1,6 +1,6 @@
 # Documentation Index
 
-This repository is RS-1 first. Current docs live under `docs/rs1/` with a small set of shared references below.
+This repository is RS-1 first, with shared platform documentation alongside product docs.
 
 ## RS-1 (Current)
 
@@ -12,6 +12,27 @@ This repository is RS-1 first. Current docs live under `docs/rs1/` with a small 
 - `docs/rs1/WORLDSTATE_PROTOCOL.md` - WebRTC WorldState streaming
 - `docs/rs1/ROOMPLAN_API.md` - RoomPlan API
 - `docs/CLOUD_API.md` - Cloud API (v1, current)
+
+## Platform (Shared)
+
+- `docs/platform/ARCHITECTURE.md` - Platform architecture overview
+- `docs/platform/DEVELOPMENT.md` - Platform development workflows
+- `docs/platform/NETWORK.md` - Network stack behavior
+- `docs/platform/MDNS.md` - Discovery and naming
+- `docs/platform/OTA_FLOW.md` - OTA update flow
+- `docs/platform/LOGGING_AND_METRICS.md` - Logs + Prometheus metrics
+- `docs/platform/STARTUP_SEQUENCE.md` - Boot sequence and lifecycle
+- `docs/platform/JSON_RPC.md` - JSON-RPC usage
+- `docs/platform/CONOPS.md` - Operational overview
+- `docs/platform/SECRETS.md` - Secrets handling
+- `docs/platform/PORTING_GUIDE.md` - Porting to new hardware
+- `docs/platform/TESTING.md` - Test strategy and commands
+- `docs/platform/TIMESYNC.md` - Time sync flow
+- `docs/platform/NATIVE_MEDIA_PIPELINE.md` - Native media pipeline
+- `docs/platform/NATIVE_PERIPHERALS.md` - Native peripheral integrations
+- `docs/platform/FRONTEND_ARCHITECTURE.md` - UI architecture notes
+- `docs/platform/SCRIPTS.md` - Scripts and helpers
+- `docs/platform/CLOUD_SIGNALING.md` - Cloud signaling background
 
 ## Process
 

@@ -1,1 +1,1 @@
-Archived. See docs/legacy/LOGGING_AND_METRICS.md.
+Moved to docs/platform/LOGGING_AND_METRICS.md.

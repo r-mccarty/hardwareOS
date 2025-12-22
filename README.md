@@ -120,7 +120,7 @@ hardwareos/
 
 ## Documentation
 
-See `docs/README.md` for the current RS-1 docs index, PRD templates, and the legacy archive.
+See `docs/README.md` for the RS-1 docs index, platform docs, PRD templates, and the legacy archive.
 
 ### RS-1 Product (Current)
 
@@ -135,9 +135,9 @@ See `docs/README.md` for the current RS-1 docs index, PRD templates, and the leg
 | [ROOMPLAN_API.md](docs/rs1/ROOMPLAN_API.md) | Room calibration endpoints |
 | [CLOUD_API.md](docs/CLOUD_API.md) | Cloud API (v1, current) |
 
-### Legacy
+### Platform + Legacy
 
-Archived pre-RS-1 docs are under [docs/legacy](docs/legacy/README.md).
+Platform docs live under [docs/platform](docs/platform), with legacy material archived in [docs/legacy](docs/legacy/README.md).
 
 ## API Endpoints
 

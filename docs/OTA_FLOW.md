@@ -1,1 +1,1 @@
-Archived. See docs/legacy/OTA_FLOW.md.
+Moved to docs/platform/OTA_FLOW.md.

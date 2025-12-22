@@ -1,1 +1,1 @@
-Archived. See docs/legacy/JSON_RPC.md.
+Moved to docs/platform/JSON_RPC.md.

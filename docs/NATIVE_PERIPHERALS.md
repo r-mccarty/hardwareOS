@@ -1,1 +1,1 @@
-Archived. See docs/legacy/NATIVE_PERIPHERALS.md.
+Moved to docs/platform/NATIVE_PERIPHERALS.md.

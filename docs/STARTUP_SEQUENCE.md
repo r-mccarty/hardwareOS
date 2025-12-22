@@ -1,1 +1,1 @@
-Archived. See docs/legacy/STARTUP_SEQUENCE.md.
+Moved to docs/platform/STARTUP_SEQUENCE.md.

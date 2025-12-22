@@ -1,1 +1,1 @@
-Archived. See docs/legacy/SCRIPTS.md.
+Moved to docs/platform/SCRIPTS.md.

@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Documentation and process updates (2025-12-22)
 
-- Added `docs/README.md` index and `docs/rs1/DEVELOPMENT.md` for current RS-1 workflows.
+- Added `docs/README.md` index, platform docs split under `docs/platform/`, and `docs/rs1/DEVELOPMENT.md` for RS-1 workflows.
 - Added PRD template/index and PR checklist updates for proposal tracking.
-- Added changelog CI enforcement and archived pre-RS-1 docs under `docs/legacy/` with stubs.
+- Added changelog CI enforcement and a focused `docs/legacy/` archive for obsolete docs.
 - Updated `docs/CLOUD_API.md` to match the Workers v1 implementation; shelved v2 spec in `docs/legacy/`.
 
 #### Apple RoomPlan CapturedRoom Integration (2024-12-22)

@@ -1,1 +1,1 @@
-Archived. See docs/legacy/FRONTEND_ARCHITECTURE.md.
+Moved to docs/platform/FRONTEND_ARCHITECTURE.md.

@@ -1,1 +1,1 @@
-Archived. See docs/legacy/CONOPS.md.
+Moved to docs/platform/CONOPS.md.

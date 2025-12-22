@@ -51,6 +51,7 @@ cd services/cloud-api && npm run dev
 | Topic | File |
 |-------|------|
 | Docs index | `docs/README.md` |
+| Platform architecture | `docs/platform/ARCHITECTURE.md` |
 | RS-1 architecture | `docs/rs1/RS1_ARCHITECTURE.md` |
 | RS-1 development | `docs/rs1/DEVELOPMENT.md` |
 | Fusion algorithms | `docs/rs1/FUSION_ENGINE.md` |
@@ -59,7 +60,7 @@ cd services/cloud-api && npm run dev
 | WorldState streaming | `docs/rs1/WORLDSTATE_PROTOCOL.md` |
 | Vision pipeline | `docs/rs1/VISION_PIPELINE.md` |
 | Cloud API spec (v1) | `docs/CLOUD_API.md` |
-| Secrets (legacy) | `docs/legacy/SECRETS.md` |
+| Secrets | `docs/platform/SECRETS.md` |
 
 ## Implementation Status
 
@@ -74,5 +75,5 @@ See `CHANGELOG.md` for detailed implementation notes.
 - **WorldState**: WebRTC DataChannel label `worldstate`, 30Hz JSON stream
 - **RoomPlan**: `POST /api/setup/roomplan` persists room config + sensor pose
 - **Radar**: Runs in Go via `go.bug.st/serial` (not native process)
-- **Secrets**: Stored in Infisical, not in repo. See `docs/legacy/SECRETS.md`
+- **Secrets**: Stored in Infisical, not in repo. See `docs/platform/SECRETS.md`
 - **Cross-compile**: `GOARCH=arm GOARM=7`
