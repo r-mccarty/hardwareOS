@@ -53,6 +53,48 @@ Vision (30Hz) ─┘    Association     Filter     Manager      DataChannel
 
 ---
 
+#### RS-1 3D Visualization MVP (2024-12-22)
+
+Tesla FSD-style 3D visualization for real-time occupancy tracking using React Three Fiber.
+
+**Components** (`ui/src/components/visualization/`):
+
+| File | Description |
+|------|-------------|
+| `Scene.tsx` | Main R3F Canvas with dark theme, fog, and lighting |
+| `Room/RoomFloor.tsx` | Blue grid floor scaled to room dimensions |
+| `Room/RoomBoundary.tsx` | Room outline with obstacle rendering |
+| `Occupants/HumanSilhouette.tsx` | Color-coded human meshes (cyan=fused, blue=radar, green=vision) |
+| `Occupants/OccupantManager.tsx` | Renders tracked objects from WorldState store |
+| `Sensor/SensorIndicator.tsx` | Device position with FOV cone visualization |
+| `Camera/CameraController.tsx` | OrbitControls for scene navigation |
+| `UI/StatsOverlay.tsx` | Occupancy count and connection status overlay |
+
+**Hooks** (`ui/src/hooks/`):
+
+| File | Description |
+|------|-------------|
+| `useWorldState.ts` | WebRTC DataChannel subscription for real-time updates |
+| `useRoomPlan.ts` | RoomPlan API fetching with sensible defaults |
+| `useWorldStateDemo.ts` | Demo mode with simulated walking occupants |
+
+**Stores** (Zustand, in `ui/src/hooks/stores.ts`):
+- `useWorldStateStore`: Tracked objects, connection state, update timestamps
+- `useRoomPlanStore`: Room dimensions, sensor pose, loading/error state
+
+**Routes**:
+- `/demo`: Standalone demo with simulated occupants (no device required)
+
+**Dependencies**: `@react-three/fiber`, `@react-three/drei`, `three`, `maath`
+
+**Visual Style**:
+- Dark background (#0a0a0f) with atmospheric fog
+- Blue grid lines (#2563eb) matching Tesla FSD aesthetic
+- Human silhouettes with capsule body, sphere head, and heading arrow
+- Color-coded by sensor source (fused/radar-only/vision-only)
+
+---
+
 #### RS-1 Vision Pipeline Spike (2024-12-22)
 
 Initial spike implementation of the camera data ingestion pipeline for the OpticWorks RS-1 product. This provides the foundational architecture for the camera → ISP → NPU vision pipeline.
