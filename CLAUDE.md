@@ -4,24 +4,22 @@ Agent entrypoint for the HardwareOS repository.
 
 ## What This Is
 
-**HardwareOS** - Embedded platform for connected sensor devices.
-**OpticWorks RS-1** - Flagship product: vision/radar sensor fusion for occupancy tracking.
+**HardwareOS** - Embedded platform for OpticWorks sensor devices.
+**OpticWorks RS-1** - Flagship occupancy sensor with radar + vision, RoomPlan, and live WorldState streaming.
 
 ## Directory Structure
 
 ```
 hardwareos/
-├── main.go, config.go, web.go      # Application core
-├── webrtc.go, webrtc_worldstate.go # WebRTC streaming
-├── roomplan.go                     # RoomPlan API
-├── products/rs1/                   # RS-1 product code
-│   ├── fusion/                     # Kalman filter, Hungarian algorithm
-│   └── radar/                      # LD2450 driver
+├── cmd/                            # Go entrypoints
+├── *.go                            # Application core wiring (config, web, RoomPlan, WebRTC)
+├── internal/, pkg/, platform/      # Shared Go packages and services
+├── products/rs1/                   # RS-1 radar, fusion, worldstate
+├── targets/rv1106/native/          # Native C pipeline, proto, CGO bindings
 ├── services/cloud-api/             # Cloudflare Workers backend (TypeScript)
-├── targets/rv1106/native/          # Native C code (camera/ISP/NPU stubs)
-├── platform/                       # Shared services (logging, ota, network)
-├── ui/                             # React frontend
-└── docs/                           # Documentation
+├── ui/                             # React frontend + 3D visualization
+├── static/                         # Committed UI build output
+└── docs/                           # Architecture + RS-1 docs
 ```
 
 ## Commands
@@ -30,9 +28,19 @@ hardwareos/
 # Build & deploy
 ./dev_deploy.sh -r <DEVICE_IP>
 ./dev_deploy.sh -r <DEVICE_IP> --skip-ui-build
+./dev_deploy.sh -r <DEVICE_IP> --run-go-tests
+
+# Build
+make build_dev
+make build_release
+make frontend
 
 # Test
-go test ./products/rs1/...
+go test ./...
+make test_e2e
+
+# UI
+cd ui && npm run dev
 
 # Cloud API
 cd services/cloud-api && npm run dev
@@ -43,22 +51,27 @@ cd services/cloud-api && npm run dev
 | Topic | File |
 |-------|------|
 | Platform architecture | `docs/ARCHITECTURE.md` |
+| RS-1 architecture | `docs/rs1/RS1_ARCHITECTURE.md` |
 | Fusion algorithms | `docs/rs1/FUSION_ENGINE.md` |
 | Radar protocol | `docs/rs1/RADAR_INTEGRATION.md` |
+| RoomPlan API | `docs/rs1/ROOMPLAN_API.md` |
 | WorldState streaming | `docs/rs1/WORLDSTATE_PROTOCOL.md` |
+| Vision pipeline | `docs/rs1/VISION_PIPELINE.md` |
 | Cloud API spec | `docs/rs1/CLOUD_API_v2.md` |
 | Secrets (Infisical) | `docs/SECRETS.md` |
 
 ## Implementation Status
 
-**Complete**: Sensor fusion, radar driver, WorldState streaming, RoomPlan API, Cloud API
-**Pending**: Vision pipeline (requires Rockchip SDK)
+**Complete**: RS-1 radar + sensor fusion, WorldState streaming, RoomPlan API, 3D visualization + CapturedRoom integration, Cloud API
+**Pending**: Vision pipeline production implementation (requires Rockchip SDK)
 
 See `CHANGELOG.md` for detailed implementation notes.
 
 ## Patterns
 
 - **Logging**: Use `platform/logging` package. Trace: `LOG_TRACE_SCOPES="rs1,fusion,radar"`
+- **WorldState**: WebRTC DataChannel label `worldstate`, 30Hz JSON stream
+- **RoomPlan**: `POST /api/setup/roomplan` persists room config + sensor pose
 - **Radar**: Runs in Go via `go.bug.st/serial` (not native process)
 - **Secrets**: Stored in Infisical, not in repo. See `docs/SECRETS.md`
 - **Cross-compile**: `GOARCH=arm GOARM=7`
