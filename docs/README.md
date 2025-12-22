@@ -11,6 +11,7 @@ This repository is RS-1 first, with shared platform documentation alongside prod
 - `docs/rs1/VISION_PIPELINE.md` - Camera/ISP/NPU pipeline
 - `docs/rs1/WORLDSTATE_PROTOCOL.md` - WebRTC WorldState streaming
 - `docs/rs1/ROOMPLAN_API.md` - RoomPlan API
+- `docs/rs1/ROOMPLAN_INTEGRATION_TESTING.md` - RoomPlan hardware-in-the-loop testing
 - `docs/CLOUD_API.md` - Cloud API (v1, current)
 
 ## Platform (Shared)
