@@ -1000,3 +1000,59 @@ export const useFailsafeModeStore = create<FailsafeModeState>(set => ({
   reason: "",
   setFailsafeMode: (active, reason) => set({ isFailsafeMode: active, reason }),
 }));
+
+// =============================================================================
+// RS-1 Visualization Stores
+// =============================================================================
+
+import type {
+  TrackedObject,
+  WorldStateMessage,
+  RoomPlanState,
+  Point2D,
+  Obstacle,
+} from "@/types/worldstate";
+
+export interface WorldStateStoreState {
+  worldState: WorldStateMessage | null;
+  previousState: WorldStateMessage | null;
+  isConnected: boolean;
+  lastUpdate: number;
+  setWorldState: (state: WorldStateMessage) => void;
+  setConnected: (connected: boolean) => void;
+}
+
+export const useWorldStateStore = create<WorldStateStoreState>(set => ({
+  worldState: null,
+  previousState: null,
+  isConnected: false,
+  lastUpdate: 0,
+  setWorldState: state =>
+    set(prev => ({
+      previousState: prev.worldState,
+      worldState: state,
+      lastUpdate: Date.now(),
+    })),
+  setConnected: connected => set({ isConnected: connected }),
+}));
+
+export interface RoomPlanStoreState {
+  roomPlan: RoomPlanState | null;
+  loading: boolean;
+  error: string | null;
+  setRoomPlan: (plan: RoomPlanState) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+}
+
+export const useRoomPlanStore = create<RoomPlanStoreState>(set => ({
+  roomPlan: null,
+  loading: false,
+  error: null,
+  setRoomPlan: plan => set({ roomPlan: plan, error: null }),
+  setLoading: loading => set({ loading }),
+  setError: error => set({ error }),
+}));
+
+// Re-export types for convenience
+export type { TrackedObject, WorldStateMessage, RoomPlanState, Point2D, Obstacle };

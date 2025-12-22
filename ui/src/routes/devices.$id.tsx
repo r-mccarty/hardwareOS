@@ -39,6 +39,7 @@ import { JsonRpcRequest, JsonRpcResponse, RpcMethodNotFound, useJsonRpc } from "
 import { useDeviceUiNavigation } from "@hooks/useAppNavigation";
 import { useVersion } from "@hooks/useVersion";
 import WebRTCVideo from "@components/WebRTCVideo";
+import { Scene } from "@components/visualization/Scene";
 import DashboardNavbar from "@components/Header";
 const ConnectionStatsSidebar = lazy(() => import("@components/sidebar/connectionStats"));
 const Terminal = lazy(() => import("@components/Terminal"));
@@ -961,7 +962,7 @@ export default function KvmIdRoute() {
 
           <div className="relative flex h-full w-full overflow-hidden">
             {isFailsafeMode && failsafeReason === "video" ? null : (
-              <WebRTCVideo hasConnectionIssues={!!ConnectionStatusElement} />
+              <Scene />
             )}
             <div
               style={{ animationDuration: "500ms" }}

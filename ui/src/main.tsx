@@ -58,6 +58,7 @@ const SecurityAccessLocalAuthRoute = lazy(
 const SettingsMacrosRoute = lazy(() => import("@routes/devices.$id.settings.macros"));
 const SettingsMacrosAddRoute = lazy(() => import("@routes/devices.$id.settings.macros.add"));
 const SettingsMacrosEditRoute = lazy(() => import("@routes/devices.$id.settings.macros.edit"));
+const DemoRoute = lazy(() => import("@routes/demo"));
 
 export const isOnDevice = import.meta.env.MODE === "device";
 export const isInCloud = !isOnDevice;
@@ -208,6 +209,10 @@ const getDeviceRoute = (r: Omit<RouteObject, "children" | "index">): RouteObject
 if (isOnDevice) {
   router = createBrowserRouter([
     {
+      path: "/demo",
+      element: <DemoRoute />,
+    },
+    {
       path: "/welcome/mode",
       element: <WelcomeLocalModeRoute />,
       action: WelcomeLocalModeRoute.action,
@@ -242,6 +247,10 @@ if (isOnDevice) {
   ]);
 } else {
   const routeObjects: RouteObject[] = [
+    {
+      path: "/demo",
+      element: <DemoRoute />,
+    },
     {
       errorElement: <ErrorBoundary />,
       children: [
