@@ -4,104 +4,189 @@
 
 ### By OpticWorks
 
-[Website](https://optic.works) | [Issues](https://github.com/opticworks/hardwareOS/issues) | [Docs](https://optic.works/docs)
+[Website](https://optic.works) | [Documentation](docs/) | [Issues](https://github.com/opticworks/hardwareOS/issues)
 
 </div>
 
-HardwareOS is an open-source embedded automation platform developed by OpticWorks. It provides a common foundation for building connected hardware devices with features like WebRTC streaming, sensor fusion, OTA updates, and home automation integration.
+HardwareOS is an open-source embedded platform for building connected sensor devices. Built on a foundation of low-latency WebRTC streaming, sensor fusion, and OTA updates, it enables rapid development of spatial awareness products.
 
-## RS-1: Flagship Product
+## OpticWorks RS-1
 
-The **OpticWorks RS-1** is the first product built on HardwareOS—a vision/radar sensor fusion device for spatial tracking. It combines:
+The **RS-1** is the flagship product—a vision/radar sensor fusion device for real-time occupancy tracking and spatial awareness.
 
-- **SC3336 MIPI Camera** with ISP lens distortion correction
-- **RKNN NPU** for YOLOv8 object detection
-- **LD2450 24GHz Radar** for range/velocity measurement
-- **Sensor Fusion Engine** with Kalman filtering
-- **WorldState Streaming** via WebRTC DataChannel
-- **RoomPlan API** for iPhone integration
+### Capabilities
 
-## Features
+| Feature | Description |
+|---------|-------------|
+| **Sensor Fusion** | Combines 24GHz radar with camera vision for accurate tracking |
+| **Real-time Streaming** | 30Hz WorldState updates via WebRTC DataChannel |
+| **Kalman Filtering** | 4-state tracking with velocity estimation |
+| **Hungarian Algorithm** | Optimal detection-to-track association |
+| **Room Calibration** | iPhone RoomPlan integration for sensor pose configuration |
+| **Low Latency** | End-to-end latency under 100ms |
 
-- **Ultra-low Latency Streaming** - 1080p@60FPS video with 30-60ms latency using H.265 encoding
-- **Remote Access** - Cloud connectivity via WebRTC through OpticWorks Cloud
-- **Open-source Software** - Written in Go on Linux, easily customizable through SSH
-- **OTA Updates** - Automatic firmware and model updates
-- **Sensor Fusion** - Real-time object tracking with vision + radar
+### Hardware
 
-## Platform Architecture
+- **Rockchip RV1106G** - ARM Cortex-A7 + RISC-V MCU
+- **SC3336 MIPI Camera** - 3MP with LDCH lens distortion correction
+- **RKNN NPU** - 0.5 TOPS for YOLOv8 inference
+- **HLK-LD2450** - 24GHz mmWave radar (3 targets, 6m range)
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        HardwareOS                            │
-│    (Platform: WebRTC, JSON-RPC, OTA, Networking, WoL)       │
-├─────────────────────────────────────────────────────────────┤
-│                    Hardware Targets                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   RV1106G   │  │   (Future)  │  │   (Future)  │         │
-│  │  First HW   │  │             │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-├─────────────────────────────────────────────────────────────┤
-│                       Products                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ OpticWorks  │  │   (Future)  │  │   (Future)  │         │
-│  │    RS-1     │  │             │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Browser / iPhone App                          │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │ WebRTC DataChannel (30Hz JSON)
+┌────────────────────────────────┴────────────────────────────────────┐
+│                         Go Application                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
+│  │ WebRTC      │  │ Fusion      │  │ WorldState  │  │ RoomPlan   │  │
+│  │ Streaming   │  │ Engine      │  │ Manager     │  │ API        │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └────────────┘  │
+│         │                │                │                          │
+│         │         ┌──────┴──────┐         │                          │
+│         │         │   Kalman    │         │                          │
+│         │         │   Filters   │◄────────┘                          │
+│         │         └──────┬──────┘                                    │
+│         │                │                                           │
+│         │         ┌──────┴──────┐                                    │
+│         │         │  Hungarian  │                                    │
+│         │         │  Algorithm  │                                    │
+│         │         └──────┬──────┘                                    │
+│  ┌──────┴────────────────┴──────┐  ┌─────────────────────────────┐  │
+│  │      gRPC Native Proxy       │  │    Radar UART Parser        │  │
+│  └──────────────┬───────────────┘  └──────────────┬──────────────┘  │
+└─────────────────┼──────────────────────────────────┼────────────────┘
+                  │ gRPC                             │ Serial (256kbps)
+┌─────────────────┴──────────────┐    ┌──────────────┴────────────────┐
+│         Native Process (C)      │    │         LD2450 Radar          │
+│  Camera → ISP → NPU → Encoder   │    │    24GHz mmWave Sensor        │
+└─────────────────────────────────┘    └──────────────────────────────┘
 ```
-
-## Contributing
-
-We welcome contributions from the community! Whether it's improving the firmware, adding new features, or enhancing documentation, your input is valuable. Please read our [Code of Conduct](/CODE_OF_CONDUCT.md) before contributing.
-
-## Getting Help
-
-- **Documentation**: Visit our [Docs](https://optic.works/docs)
-- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/opticworks/hardwareOS/issues)
-
-# Development
-
-HardwareOS is written in Go & TypeScript, with some components in C. An intermediate level of Go & TypeScript knowledge is recommended.
-
-The project contains:
-- **Backend**: Go application running on the device
-- **Frontend**: React/TypeScript UI served by the device
-- **Native**: C code for hardware access (camera, ISP, NPU)
-
-For comprehensive development information, see **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
 
 ## Quick Start
 
-For quick device development, use the `./dev_deploy.sh` script:
+### Development Deploy
 
 ```bash
-./dev_deploy.sh -r <DEVICE_IP>              # Build and deploy everything
-./dev_deploy.sh -r <DEVICE_IP> --skip-ui-build  # Backend only (faster)
+# Full build and deploy
+./dev_deploy.sh -r <DEVICE_IP>
+
+# Backend only (faster iteration)
+./dev_deploy.sh -r <DEVICE_IP> --skip-ui-build
+
+# Run tests on device
+./dev_deploy.sh -r <DEVICE_IP> --run-go-tests
 ```
 
-## Backend
+### Local Development
 
-The backend is written in Go and handles device management, cloud API integration, sensor fusion, and WebRTC streaming.
+```bash
+# Run tests
+go test ./products/rs1/...
 
-## Frontend
+# Build
+go build ./...
 
-The frontend is written in React and TypeScript. Build targets:
-- `device`: Production build for the hardware device
-- `cloud-development`: Development against cloud backend
-- `cloud-production`: Production cloud deployment
+# Frontend development
+cd ui && npm run dev
+```
+
+## Project Structure
+
+```
+hardwareos/
+├── products/rs1/           # RS-1 product implementation
+│   ├── fusion/             # Sensor fusion algorithms
+│   │   ├── engine.go       # Fusion coordinator
+│   │   ├── kalman.go       # Kalman filter
+│   │   ├── hungarian.go    # Data association
+│   │   └── transform.go    # Coordinate transforms
+│   ├── radar/              # LD2450 radar driver
+│   ├── worldstate.go       # Occupancy state manager
+│   └── init.go             # Product initialization
+├── targets/rv1106/         # RV1106 hardware target
+│   └── native/             # Native C code + gRPC
+├── platform/               # Platform abstractions
+├── internal/               # Internal packages
+├── ui/                     # React frontend
+└── docs/                   # Documentation
+```
 
 ## Documentation
+
+### RS-1 Product
+
+| Document | Description |
+|----------|-------------|
+| [RS1_ARCHITECTURE.md](docs/rs1/RS1_ARCHITECTURE.md) | System overview and data flow |
+| [FUSION_ENGINE.md](docs/rs1/FUSION_ENGINE.md) | Kalman filter and Hungarian algorithm |
+| [RADAR_INTEGRATION.md](docs/rs1/RADAR_INTEGRATION.md) | LD2450 protocol implementation |
+| [VISION_PIPELINE.md](docs/rs1/VISION_PIPELINE.md) | Camera/ISP/NPU pipeline |
+| [WORLDSTATE_PROTOCOL.md](docs/rs1/WORLDSTATE_PROTOCOL.md) | WebRTC streaming protocol |
+| [ROOMPLAN_API.md](docs/rs1/ROOMPLAN_API.md) | Room calibration endpoints |
+
+### Platform
 
 | Document | Description |
 |----------|-------------|
 | [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development setup and workflows |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture overview |
-| [RS1_ARCHITECTURE.md](docs/rs1/RS1_ARCHITECTURE.md) | RS-1 specific architecture |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Platform architecture |
+| [OTA_FLOW.md](docs/OTA_FLOW.md) | Over-the-air update system |
+| [CLOUD_SIGNALING.md](docs/CLOUD_SIGNALING.md) | WebRTC signaling via cloud |
+
+## API Endpoints
+
+### RoomPlan Configuration
+
+```bash
+# Upload room configuration
+curl -X POST http://device/api/setup/roomplan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "room_width": 10.0,
+    "room_height": 8.0,
+    "sensor_pose": [1,0,0,0, 0,1,0,0, 0,0,1,0, 2.5,4.0,2.8,1]
+  }'
+
+# Get current configuration
+curl http://device/api/setup/roomplan
+```
+
+### WorldState Streaming
+
+Connect via WebRTC and open the `worldstate` DataChannel to receive 30Hz updates:
+
+```json
+{
+  "timestamp_ns": 1703251200000000000,
+  "frame_number": 12345,
+  "occupant_count": 2,
+  "objects": [
+    {
+      "track_id": "track_001",
+      "x": 3.5,
+      "y": 2.1,
+      "vx": 0.5,
+      "vy": -0.2,
+      "confidence": 0.95,
+      "heading": 68.2,
+      "speed": 0.54
+    }
+  ]
+}
+```
+
+## Contributing
+
+We welcome contributions! See our [Code of Conduct](CODE_OF_CONDUCT.md) for guidelines.
 
 ## License
 
-This project is licensed under the GNU General Public License v2.0 - see the [LICENSE](LICENSE) file for details.
+GNU General Public License v2.0 - see [LICENSE](LICENSE) for details.
 
 ---
 
-**OpticWorks** - Building the future of connected hardware
+**OpticWorks** - Building spatial intelligence for the physical world

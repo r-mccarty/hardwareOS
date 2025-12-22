@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### RS-1 Complete Sensor Fusion Implementation (2024-12-22)
+
+Complete implementation of sensor fusion, WorldState streaming, and RoomPlan API for the OpticWorks RS-1 product.
+
+**Fusion Algorithms** (`products/rs1/fusion/`):
+
+| File | Description |
+|------|-------------|
+| `kalman.go` | 4-state Kalman filter [px, py, vx, vy] using gonum/mat |
+| `hungarian.go` | Hungarian algorithm for optimal detection-to-track association |
+| `transform.go` | Position and TransformMatrix types for coordinate transforms |
+| `engine.go` | Fusion coordinator with track management |
+
+**Key Features**:
+- Kalman filter with configurable process/measurement noise
+- Hungarian algorithm with 15-degree angular threshold
+- 4x4 homogeneous transformation matrices (column-major)
+- Automatic track creation/deletion lifecycle
+- Thread-safe track access with RWMutex
+
+**WorldState Streaming** (`webrtc_worldstate.go`):
+- 30Hz JSON streaming over WebRTC DataChannel
+- Channel label: `"worldstate"`
+- Message format includes: timestamp, frame number, occupant count, tracked objects
+
+**RoomPlan API** (`roomplan.go`):
+- `POST /api/setup/roomplan`: Upload room configuration with sensor pose
+- `GET /api/setup/roomplan`: Retrieve current configuration
+- Transform matrix validation (last row must be [0,0,0,1])
+- Persistent storage in config.json
+
+**Integration**:
+- RS-1 product initialization in `main.go`
+- WorldState getter/setter accessor functions
+- Graceful shutdown handling
+
+**Data Flow**:
+```
+Radar (10Hz) ──┬──► Hungarian ──► Kalman ──► WorldState ──► WebRTC (30Hz)
+Vision (30Hz) ─┘    Association     Filter     Manager      DataChannel
+```
+
+---
+
 #### RS-1 Vision Pipeline Spike (2024-12-22)
 
 Initial spike implementation of the camera data ingestion pipeline for the OpticWorks RS-1 product. This provides the foundational architecture for the camera → ISP → NPU vision pipeline.

@@ -1,264 +1,203 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-**HardwareOS** is an embedded automation platform designed to support multiple hardware targets and product configurations. It provides a common foundation for building connected hardware devices with features like WebRTC streaming, sensor fusion, OTA updates, and home automation integration.
+**HardwareOS** is an embedded platform for building connected sensor devices. The **OpticWorks RS-1** is the flagship product—a vision/radar sensor fusion device for real-time occupancy tracking.
 
-### Platform Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        HardwareOS                            │
-│    (Platform: WebRTC, JSON-RPC, OTA, Networking, WoL)       │
-├─────────────────────────────────────────────────────────────┤
-│                    Hardware Targets                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   RV1106G   │  │   (Future)  │  │   (Future)  │         │
-│  │  First HW   │  │             │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-├─────────────────────────────────────────────────────────────┤
-│                       Products                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ OpticWorks  │  │   (Future)  │  │   (Future)  │         │
-│  │    RS-1     │  │             │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-└─────────────────────────────────────────────────────────────┘
-```
-
-- **HardwareOS**: This repository - the platform layer
-- **RV1106G**: First hardware target (Rockchip SoC with NPU)
-- **OpticWorks RS-1**: First product - vision/radar sensor fusion for spatial tracking
-
-### The Pivot from JetKVM
-
-HardwareOS builds on JetKVM's solved problems:
-- **CGO Bridge**: Go-to-C communication for hardware access
-- **WebRTC Streaming**: Low-latency video and data channels
-- **Cross-Compilation**: ARM toolchain (extensible to other targets)
-- **Supervisor/OTA**: Process management and remote updates
-- **Automation Features**: Wake-on-LAN, network discovery, etc.
-
-For the RS-1 product, we are adding:
-- **SC3336 MIPI Camera** with ISP lens distortion correction
-- **RKNN NPU** for YOLOv8 object detection
-- **LD2450 Radar** for range/velocity measurement
-- **Sensor Fusion Engine** with Kalman filtering
-- **WorldState Streaming** via WebRTC DataChannel
-- **RoomPlan API** for iPhone integration
-
-### Architecture Documentation
-
-See `docs/rs1/` for detailed RS-1 architecture:
-
-| Document | Description |
-|----------|-------------|
-| [RS1_ARCHITECTURE.md](docs/rs1/RS1_ARCHITECTURE.md) | System overview, package structure, data flow |
-| [VISION_PIPELINE.md](docs/rs1/VISION_PIPELINE.md) | Camera/ISP/NPU implementation |
-| [RADAR_INTEGRATION.md](docs/rs1/RADAR_INTEGRATION.md) | LD2450 protocol and UART parsing |
-| [FUSION_ENGINE.md](docs/rs1/FUSION_ENGINE.md) | Kalman filter, Hungarian algorithm |
-| [WORLDSTATE_PROTOCOL.md](docs/rs1/WORLDSTATE_PROTOCOL.md) | Protobuf schema, WebRTC streaming |
-| [ROOMPLAN_API.md](docs/rs1/ROOMPLAN_API.md) | iPhone RoomPlan integration |
-
-### Claude Skills
-
-Development guidance is available in `.claude/skills/`:
-
-| Skill | Use When |
-|-------|----------|
-| `rs1-vision-pipeline.md` | Working on camera, ISP, or NPU code |
-| `rs1-radar-protocol.md` | Implementing LD2450 UART parsing |
-| `rs1-sensor-fusion.md` | Kalman filter or data association |
-| `rs1-worldstate.md` | WebRTC DataChannel streaming |
-
----
-
-## RS-1 Architecture
+### Current Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        Browser / iPhone App                          │
 └────────────────────────────────┬────────────────────────────────────┘
-                                 │ WebRTC + HTTPS
+                                 │ WebRTC DataChannel (30Hz JSON)
 ┌────────────────────────────────┴────────────────────────────────────┐
 │                         Go Application                               │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │ WebRTC      │  │ Fusion      │  │ JSON-RPC    │  │ RoomPlan   │  │
-│  │ Streaming   │  │ Engine      │  │ API         │  │ API        │  │
-│  └──────┬──────┘  └──────┬──────┘  └─────────────┘  └────────────┘  │
+│  │ WebRTC      │  │ Fusion      │  │ WorldState  │  │ RoomPlan   │  │
+│  │ Streaming   │  │ Engine      │  │ Manager     │  │ API        │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └────────────┘  │
+│         │                │                │                          │
+│         │         ┌──────┴──────┐         │                          │
+│         │         │   Kalman    │◄────────┘                          │
+│         │         │   Filters   │                                    │
+│         │         └──────┬──────┘                                    │
 │         │                │                                           │
-│  ┌──────┴──────┐  ┌──────┴──────┐                                   │
-│  │ Video Track │  │ WorldState  │                                   │
-│  │ (H.265)     │  │ DataChannel │                                   │
-│  └──────┬──────┘  └──────┬──────┘                                   │
-│         │                │                                           │
+│         │         ┌──────┴──────┐                                    │
+│         │         │  Hungarian  │                                    │
+│         │         │  Algorithm  │                                    │
+│         │         └──────┬──────┘                                    │
 │  ┌──────┴────────────────┴──────┐  ┌─────────────────────────────┐  │
 │  │      gRPC Native Proxy       │  │    Radar UART Parser        │  │
 │  └──────────────┬───────────────┘  └──────────────┬──────────────┘  │
 └─────────────────┼──────────────────────────────────┼────────────────┘
-                  │ gRPC                             │ Serial
+                  │ gRPC                             │ Serial (256kbps)
 ┌─────────────────┴──────────────┐    ┌──────────────┴────────────────┐
 │         Native Process (C)      │    │         LD2450 Radar          │
 │  Camera → ISP → NPU → Encoder   │    │    24GHz mmWave Sensor        │
 └─────────────────────────────────┘    └──────────────────────────────┘
 ```
 
-### Package Structure (Target)
+---
+
+## Package Structure
 
 ```
-/workspaces/hardwareos/
-├── cmd/main.go                    # Supervisor process
-├── main.go                        # Application entry point
-├── config.go                      # RS-1 configuration
-├── webrtc.go                      # WebRTC session management
-├── worldstate.go                  # WorldState streaming (NEW)
-├── roomplan.go                    # RoomPlan API (NEW)
-├── internal/
-│   ├── native/
-│   │   ├── cgo/
-│   │   │   ├── camera.c           # SC3336 initialization (NEW)
-│   │   │   ├── isp.c              # ISP/LDCH config (NEW)
-│   │   │   ├── npu.c              # RKNN inference (NEW)
-│   │   │   └── video.c            # Pipeline (MODIFIED)
-│   │   └── proto/native.proto     # VisionFrame messages (MODIFIED)
-│   ├── radar/                     # LD2450 package (NEW)
-│   │   ├── ld2450.go
-│   │   ├── types.go
-│   │   └── state.go
-│   └── fusion/                    # Sensor fusion (NEW)
-│       ├── engine.go
-│       ├── hungarian.go
-│       ├── kalman.go
-│       └── worldstate.go
-└── docs/rs1/                      # RS-1 documentation
+hardwareos/
+├── main.go                         # Application entry + RS-1 init
+├── config.go                       # Configuration (includes RoomConfig)
+├── webrtc.go                       # WebRTC sessions + worldstate channel
+├── webrtc_worldstate.go            # WorldState streaming (30Hz)
+├── roomplan.go                     # RoomPlan API handlers
+├── web.go                          # HTTP routes
+│
+├── products/rs1/                   # RS-1 PRODUCT
+│   ├── init.go                     # Product initialization
+│   ├── config.go                   # RS-1 specific config
+│   ├── worldstate.go               # Occupancy state manager
+│   ├── fusion.go                   # Fusion engine wrapper
+│   ├── radar.go                    # Radar manager wrapper
+│   │
+│   ├── fusion/                     # SENSOR FUSION ALGORITHMS
+│   │   ├── engine.go               # Fusion coordinator
+│   │   ├── kalman.go               # Kalman filter [px,py,vx,vy]
+│   │   ├── hungarian.go            # Hungarian data association
+│   │   ├── transform.go            # Coordinate transforms
+│   │   └── *_test.go               # Unit tests
+│   │
+│   └── radar/                      # LD2450 RADAR DRIVER
+│       ├── ld2450.go               # UART parser
+│       ├── types.go                # Target types
+│       └── state.go                # Thread-safe state latch
+│
+├── targets/rv1106/                 # RV1106 HARDWARE TARGET
+│   └── native/                     # Native C + gRPC
+│       ├── proto/native.proto      # Protobuf definitions
+│       └── cgo/                    # CGO bridge
+│
+├── platform/                       # Platform abstractions
+│   ├── config/                     # Brand configuration
+│   ├── logging/                    # Zerolog wrapper
+│   ├── network/                    # Network management
+│   └── ota/                        # OTA updates
+│
+├── internal/                       # Internal packages
+└── ui/                             # React frontend
 ```
+
+---
+
+## Key Components
+
+### Sensor Fusion (`products/rs1/fusion/`)
+
+| File | Purpose |
+|------|---------|
+| `engine.go` | Coordinates radar + vision, manages tracks |
+| `kalman.go` | 4-state Kalman filter [px, py, vx, vy] |
+| `hungarian.go` | Optimal detection-to-track association |
+| `transform.go` | Sensor → room coordinate transforms |
+
+**Kalman Filter Parameters:**
+- State: `[x, y, vx, vy]`
+- Process noise Q: `diag(0.1, 0.1, 1.0, 1.0)`
+- Measurement noise R: `diag(0.5, 0.5)`
+- Max missed frames: 30 (3 seconds at 10Hz)
+
+**Hungarian Algorithm:**
+- Max association angle: 15 degrees
+- Uses azimuth matching between radar and vision
+
+### WorldState Streaming (`webrtc_worldstate.go`)
+
+- 30Hz JSON streaming over WebRTC DataChannel
+- Channel label: `"worldstate"`
+- Connects via `SetRS1WorldStateGetter()` accessor
+
+**Message Format:**
+```json
+{
+  "timestamp_ns": 1703251200000000000,
+  "frame_number": 12345,
+  "occupant_count": 2,
+  "objects": [{
+    "track_id": "track_001",
+    "x": 3.5, "y": 2.1,
+    "vx": 0.5, "vy": -0.2,
+    "confidence": 0.95,
+    "heading": 68.2, "speed": 0.54,
+    "is_radar_only": false, "is_vision_only": false
+  }]
+}
+```
+
+### RoomPlan API (`roomplan.go`)
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/setup/roomplan` | POST | Upload room configuration |
+| `/api/setup/roomplan` | GET | Get current configuration |
+
+**Transform Matrix Format:** Column-major 4x4 homogeneous matrix. Last row must be `[0, 0, 0, 1]`.
+
+### Radar Driver (`products/rs1/radar/`)
+
+- **Protocol:** LD2450 binary UART @ 256000 baud
+- **Capabilities:** 3 targets, 6m range, azimuth + distance
+- **Update rate:** 10Hz
 
 ---
 
 ## Build Commands
 
-### Full Development Deploy (to device)
 ```bash
-./dev_deploy.sh -r <DEVICE_IP>              # Build and deploy everything
-./dev_deploy.sh -r <DEVICE_IP> --skip-ui-build  # Backend only (faster)
-```
+# Development deploy
+./dev_deploy.sh -r <DEVICE_IP>              # Full build + deploy
+./dev_deploy.sh -r <DEVICE_IP> --skip-ui-build  # Backend only
 
-### Backend Development
-```bash
-make test                     # Run Go unit tests locally
-make lint                     # Run go vet
-go test ./...                 # Standard Go testing
-```
+# Testing
+go test ./products/rs1/...                  # RS-1 unit tests
+go test ./products/rs1/fusion/... -v        # Fusion tests verbose
+./dev_deploy.sh -r <DEVICE_IP> --run-go-tests   # On-device tests
 
-### Run Tests on Device
-```bash
-./dev_deploy.sh -r <DEVICE_IP> --run-go-tests       # Build, deploy, and run tests
-./dev_deploy.sh -r <DEVICE_IP> --run-go-tests-only  # Run tests only
-```
-
-### Frontend Development
-```bash
-cd ui
-npm install
-./dev_device.sh <DEVICE_IP>   # Live development with hot reload
-npm run lint                  # Run ESLint
-npm run build:device          # Production build for device
+# Linting
+go vet ./products/rs1/...                   # Vet RS-1 packages
 ```
 
 ---
 
 ## Implementation Status
 
-### Phase 1: Codebase Cleanup (Remove KVM Features)
-**Status**: Planned
+### Completed
 
-Files to DELETE:
-- `internal/usbgadget/` - USB HID emulation
-- `internal/hidrpc/` - HID protocol
-- `jiggler.go`, `wol.go`, `hidrpc.go`
-- `usb_mass_storage.go`, `block_device*.go`
+| Component | Location | Status |
+|-----------|----------|--------|
+| Kalman Filter | `fusion/kalman.go` | Done |
+| Hungarian Algorithm | `fusion/hungarian.go` | Done |
+| Transform Matrix | `fusion/transform.go` | Done |
+| Fusion Engine | `fusion/engine.go` | Done |
+| WorldState Manager | `worldstate.go` | Done |
+| WebRTC Streaming | `webrtc_worldstate.go` | Done |
+| RoomPlan API | `roomplan.go` | Done |
+| LD2450 Radar | `radar/` | Done |
+| Product Integration | `main.go`, `init.go` | Done |
 
-Files to MODIFY:
-- `config.go` - Remove USB/keyboard configs
-- `jsonrpc.go` - Remove ~40 KVM-specific handlers
-- `serial.go` - Replace ATX/DC with radar
-- `webrtc.go` - Remove HID channels
+### Pending
 
-### Phase 2: Native Vision Pipeline
-**Status**: Planned
-
-New files:
-- `internal/native/cgo/camera.c` - SC3336 MIPI init
-- `internal/native/cgo/isp.c` - ISP with LDCH
-- `internal/native/cgo/npu.c` - RKNN YOLOv8
-
-### Phase 3: Radar Integration
-**Status**: Planned
-
-New package: `internal/radar/`
-- LD2450 UART protocol parser
-- Thread-safe state latch
-
-### Phase 4: Sensor Fusion
-**Status**: Planned
-
-New package: `internal/fusion/`
-- Hungarian algorithm for association
-- Kalman filter for state estimation
-
-### Phase 5: WorldState Streaming
-**Status**: Planned
-
-New WebRTC DataChannel: `worldstate`
-- 30Hz Protobuf streaming
-- TrackedObject messages
-
-### Phase 6: RoomPlan API
-**Status**: Planned
-
-New endpoints:
-- `POST /api/setup/roomplan`
-- `GET /api/setup/roomplan`
-
----
-
-## Key Development Notes
-
-### Cross-Compilation
-The backend cross-compiles for ARM (GOARCH=arm, GOARM=7). Without the native buildkit (`/opt/jetkvm-native-buildkit`), builds automatically run in Docker using `ghcr.io/jetkvm/buildkit:latest`.
-
-### Logging
-Use the `internal/logging` package, not `fmt.Print` or standard `log` (enforced by golangci-lint). Enable trace logging:
-```bash
-export LOG_TRACE_SCOPES="jetkvm,cloud,websocket,native,jsonrpc,radar,fusion"
-```
-
-### Device Access
-```bash
-ssh root@<DEVICE_IP>
-tail -f /var/log/jetkvm.log           # Application logs
-cat /userdata/kvm_config.json         # Current configuration
-```
-
-### Native Code (CGO)
-The `internal/native/cgo/ui` symlink must point to `../eez/src/ui`. If builds fail with missing `ui/ui.h`, recreate the symlink:
-```bash
-cd internal/native/cgo && rm ui && ln -s ../eez/src/ui ui
-```
-
-### Localization (Frontend)
-All user-facing strings must use the paraglide-js localization system:
-```bash
-npm run i18n              # Resort, validate, compile translations
-npm run i18n:audit        # Check for issues
-```
+| Component | Location | Notes |
+|-----------|----------|-------|
+| Vision Pipeline | `targets/rv1106/native/` | Requires C implementation |
+| NPU Integration | `native/cgo/npu.c` | YOLOv8 inference |
+| Camera Driver | `native/cgo/camera.c` | SC3336 MIPI |
+| ISP/LDCH | `native/cgo/isp.c` | Lens distortion correction |
 
 ---
 
 ## Configuration
 
-RS-1 configuration stored at `/userdata/kvm_config.json`:
+Configuration at `/userdata/kvm_config.json`:
 
 ```json
 {
@@ -267,47 +206,86 @@ RS-1 configuration stored at `/userdata/kvm_config.json`:
   "room_config": {
     "width": 10.0,
     "height": 8.0,
-    "sensor_pose": { "m": [1,0,0,0, 0,1,0,0, 0,0,1,0, 2.5,4.0,2.8,1] }
-  },
-  "camera_config": {
-    "resolution": "1080p",
-    "fps": 30
-  },
-  "radar_config": {
-    "uart_path": "/dev/ttyS0",
-    "baud_rate": 256000
-  },
-  "model_path": "/userdata/models/yolov8n.rknn"
+    "sensor_pose": [1,0,0,0, 0,1,0,0, 0,0,1,0, 2.5,4.0,2.8,1],
+    "room_polygon": [],
+    "obstacles": []
+  }
 }
 ```
 
 ---
 
-## Retained from JetKVM
+## Development Notes
 
-| Component | Purpose | Status |
-|-----------|---------|--------|
-| WebRTC | Video/data streaming | Keep |
-| JSON-RPC | Command/event protocol | Keep (modify handlers) |
-| OTA | App and model updates | Keep (add model updates) |
-| Supervisor | Crash recovery | Keep |
-| mDNS | Device discovery | Keep |
-| Network | DHCP, WiFi, static IP | Keep |
-| Wake-on-LAN | Automation trigger | Keep |
-| Prometheus | Metrics | Keep (add fusion metrics) |
-| LVGL UI | LCD touchscreen | Keep |
+### Logging
+Use `platform/logging` package. Enable trace:
+```bash
+export LOG_TRACE_SCOPES="rs1,fusion,radar,worldstate"
+```
+
+### Cross-Compilation
+ARM target: `GOARCH=arm GOARM=7`. Docker build uses `ghcr.io/jetkvm/buildkit:latest`.
+
+### Testing Fusion Algorithms
+```bash
+go test ./products/rs1/fusion/... -v -run TestKalman
+go test ./products/rs1/fusion/... -v -run TestAssociate
+go test ./products/rs1/fusion/... -v -run TestTransform
+```
+
+### Adding New Tracks
+Tracks are auto-created in `engine.go` when:
+1. Unmatched radar detection persists
+2. Unmatched vision detection persists
+
+Tracks are deleted when:
+- `KalmanFilter.ShouldDelete()` returns true (30 missed frames)
 
 ---
 
-## Removed from JetKVM
+## Documentation
 
-| Component | Reason |
-|-----------|--------|
-| USB Gadget | No keyboard/mouse emulation (RS-1) |
-| HID RPC | No HID device input (RS-1) |
-| Virtual Media | No ISO mounting (RS-1) |
-| EDID/HDMI | Using MIPI camera on RS-1 |
-| ATX/DC Power | No power control (RS-1) |
-| Jiggler | No mouse simulation |
+### RS-1 Product
+| Document | Description |
+|----------|-------------|
+| [RS1_ARCHITECTURE.md](docs/rs1/RS1_ARCHITECTURE.md) | System overview |
+| [FUSION_ENGINE.md](docs/rs1/FUSION_ENGINE.md) | Algorithm details |
+| [RADAR_INTEGRATION.md](docs/rs1/RADAR_INTEGRATION.md) | LD2450 protocol |
+| [VISION_PIPELINE.md](docs/rs1/VISION_PIPELINE.md) | Camera/NPU pipeline |
+| [WORLDSTATE_PROTOCOL.md](docs/rs1/WORLDSTATE_PROTOCOL.md) | Streaming format |
+| [ROOMPLAN_API.md](docs/rs1/ROOMPLAN_API.md) | REST endpoints |
 
-*Note: Components removed are RS-1 product-specific. Other HardwareOS products may retain different subsets of JetKVM functionality.*
+### Platform
+| Document | Description |
+|----------|-------------|
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Dev setup |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Platform architecture |
+| [OTA_FLOW.md](docs/OTA_FLOW.md) | Update system |
+
+---
+
+## Common Tasks
+
+### Adding a new sensor input
+1. Create package in `products/rs1/<sensor>/`
+2. Implement detection callback to fusion engine
+3. Register in `init.go`
+
+### Modifying fusion parameters
+1. Edit constants in `fusion/kalman.go` or `fusion/hungarian.go`
+2. Run tests: `go test ./products/rs1/fusion/...`
+
+### Adding new WorldState fields
+1. Update `worldStateMessage` in `webrtc_worldstate.go`
+2. Update `trackedObjectJSON` struct
+3. Update protobuf if needed: `targets/rv1106/native/proto/native.proto`
+
+### Debugging fusion
+Enable trace logging:
+```go
+logger.Trace().
+    Str("track_id", track.ID).
+    Float64("x", x).
+    Float64("y", y).
+    Msg("track updated")
+```
