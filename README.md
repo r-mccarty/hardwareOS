@@ -1,50 +1,107 @@
 <div align="center">
-    <img alt="JetKVM logo" src="https://jetkvm.com/logo-blue.png" height="28">
 
-### KVM
+# HardwareOS
 
-[Discord](https://jetkvm.com/discord) | [Website](https://jetkvm.com) | [Issues](https://github.com/jetkvm/cloud-api/issues) | [Docs](https://jetkvm.com/docs)
+### By OpticWorks
 
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/jetkvm.svg?style=social&label=Follow%20%40JetKVM)](https://twitter.com/jetkvm)
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/jetkvm/kvm)](https://goreportcard.com/report/github.com/jetkvm/kvm)
+[Website](https://optic.works) | [Issues](https://github.com/opticworks/hardwareOS/issues) | [Docs](https://optic.works/docs)
 
 </div>
 
-JetKVM is a high-performance, open-source KVM over IP (Keyboard, Video, Mouse) solution designed for efficient remote management of computers, servers, and workstations. Whether you're dealing with boot failures, installing a new operating system, adjusting BIOS settings, or simply taking control of a machine from afar, JetKVM provides the tools to get it done effectively.
+HardwareOS is an open-source embedded automation platform developed by OpticWorks. It provides a common foundation for building connected hardware devices with features like WebRTC streaming, sensor fusion, OTA updates, and home automation integration.
+
+## RS-1: Flagship Product
+
+The **OpticWorks RS-1** is the first product built on HardwareOS—a vision/radar sensor fusion device for spatial tracking. It combines:
+
+- **SC3336 MIPI Camera** with ISP lens distortion correction
+- **RKNN NPU** for YOLOv8 object detection
+- **LD2450 24GHz Radar** for range/velocity measurement
+- **Sensor Fusion Engine** with Kalman filtering
+- **WorldState Streaming** via WebRTC DataChannel
+- **RoomPlan API** for iPhone integration
 
 ## Features
 
-- **Ultra-low Latency** - 1080p@60FPS video with 30-60ms latency using H.264 encoding. Smooth mouse and keyboard interaction for responsive remote control.
-- **Free & Optional Remote Access** - Remote management via JetKVM Cloud using WebRTC.
-- **Open-source software** - Written in Golang on Linux. Easily customizable through SSH access to the JetKVM device.
+- **Ultra-low Latency Streaming** - 1080p@60FPS video with 30-60ms latency using H.265 encoding
+- **Remote Access** - Cloud connectivity via WebRTC through OpticWorks Cloud
+- **Open-source Software** - Written in Go on Linux, easily customizable through SSH
+- **OTA Updates** - Automatic firmware and model updates
+- **Sensor Fusion** - Real-time object tracking with vision + radar
+
+## Platform Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        HardwareOS                            │
+│    (Platform: WebRTC, JSON-RPC, OTA, Networking, WoL)       │
+├─────────────────────────────────────────────────────────────┤
+│                    Hardware Targets                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   RV1106G   │  │   (Future)  │  │   (Future)  │         │
+│  │  First HW   │  │             │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+├─────────────────────────────────────────────────────────────┤
+│                       Products                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ OpticWorks  │  │   (Future)  │  │   (Future)  │         │
+│  │    RS-1     │  │             │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Contributing
 
-We welcome contributions from the community! Whether it's improving the firmware, adding new features, or enhancing documentation, your input is valuable. We also have some rules and taboos here, so please read this page and our [Code of Conduct](/CODE_OF_CONDUCT.md) carefully.
+We welcome contributions from the community! Whether it's improving the firmware, adding new features, or enhancing documentation, your input is valuable. Please read our [Code of Conduct](/CODE_OF_CONDUCT.md) before contributing.
 
-## I need help
+## Getting Help
 
-The best place to search for answers is our [Documentation](https://jetkvm.com/docs). If you can't find the answer there, check our [Discord Server](https://jetkvm.com/discord).
-
-## I want to report an issue
-
-If you've found an issue and want to report it, please check our [Issues](https://github.com/jetkvm/kvm/issues) page. Make sure the description contains information about the firmware version you're using, your platform, and a clear explanation of the steps to reproduce the issue.
+- **Documentation**: Visit our [Docs](https://optic.works/docs)
+- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/opticworks/hardwareOS/issues)
 
 # Development
 
-JetKVM is written in Go & TypeScript. with some bits and pieces written in C. An intermediate level of Go & TypeScript knowledge is recommended for comfortable programming.
+HardwareOS is written in Go & TypeScript, with some components in C. An intermediate level of Go & TypeScript knowledge is recommended.
 
-The project contains two main parts, the backend software that runs on the KVM device and the frontend software that is served by the KVM device, and also the cloud.
+The project contains:
+- **Backend**: Go application running on the device
+- **Frontend**: React/TypeScript UI served by the device
+- **Native**: C code for hardware access (camera, ISP, NPU)
 
-For comprehensive development information, including setup, testing, debugging, and contribution guidelines, see **[DEVELOPMENT.md](DEVELOPMENT.md)**.
+For comprehensive development information, see **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
 
-For quick device development, use the `./dev_deploy.sh` script. It will build the frontend and backend and deploy them to the local KVM device. Run `./dev_deploy.sh --help` for more information.
+## Quick Start
+
+For quick device development, use the `./dev_deploy.sh` script:
+
+```bash
+./dev_deploy.sh -r <DEVICE_IP>              # Build and deploy everything
+./dev_deploy.sh -r <DEVICE_IP> --skip-ui-build  # Backend only (faster)
+```
 
 ## Backend
 
-The backend is written in Go and is responsible for the KVM device management, the cloud API and the cloud web.
+The backend is written in Go and handles device management, cloud API integration, sensor fusion, and WebRTC streaming.
 
 ## Frontend
 
-The frontend is written in React and TypeScript and is served by the KVM device. It has three build targets: `device`, `development` and `production`. Development is used for development of the cloud version on your local machine, device is used for building the frontend for the KVM device and production is used for building the frontend for the cloud.
+The frontend is written in React and TypeScript. Build targets:
+- `device`: Production build for the hardware device
+- `cloud-development`: Development against cloud backend
+- `cloud-production`: Production cloud deployment
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development setup and workflows |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture overview |
+| [RS1_ARCHITECTURE.md](docs/rs1/RS1_ARCHITECTURE.md) | RS-1 specific architecture |
+
+## License
+
+This project is licensed under the GNU General Public License v2.0 - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**OpticWorks** - Building the future of connected hardware
