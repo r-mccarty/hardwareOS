@@ -1,0 +1,64 @@
+name: changelog check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    env:
+      SKIP_CHANGELOG: ${{ vars.SKIP_CHANGELOG }}
+    steps:
+      - name: Check changelog updated
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull request context; skipping.');
+              return;
+            }
+
+            const labels = (pr.labels || []).map((label) => label.name);
+            if (labels.includes('no-changelog')) {
+              core.info('Skipping changelog check (no-changelog label).');
+              return;
+            }
+
+            if (process.env.SKIP_CHANGELOG === '1') {
+              core.info('Skipping changelog check (SKIP_CHANGELOG=1).');
+              return;
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            const changedPaths = files.map((file) => file.filename);
+            const hasChangelog = changedPaths.includes('CHANGELOG.md');
+
+            const codeChanged = changedPaths.some((path) => {
+              if (path === 'CHANGELOG.md') return false;
+              if (path.startsWith('docs/')) return false;
+              if (path.startsWith('.github/')) return false;
+              if (path.endsWith('.md')) return false;
+              return true;
+            });
+
+            if (codeChanged && !hasChangelog) {
+              core.setFailed(
+                'CHANGELOG.md is required when non-doc files change. ' +
+                  'Add an entry or apply the no-changelog label.'
+              );
+              return;
+            }
+
+            core.info('Changelog check passed.');

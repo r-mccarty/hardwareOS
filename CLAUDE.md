@@ -19,7 +19,7 @@ hardwareos/
 ├── services/cloud-api/             # Cloudflare Workers backend (TypeScript)
 ├── ui/                             # React frontend + 3D visualization
 ├── static/                         # Committed UI build output
-└── docs/                           # Architecture + RS-1 docs
+└── docs/                           # RS-1 docs, PRDs, and legacy archive
 ```
 
 ## Commands
@@ -50,15 +50,16 @@ cd services/cloud-api && npm run dev
 
 | Topic | File |
 |-------|------|
-| Platform architecture | `docs/ARCHITECTURE.md` |
+| Docs index | `docs/README.md` |
 | RS-1 architecture | `docs/rs1/RS1_ARCHITECTURE.md` |
+| RS-1 development | `docs/rs1/DEVELOPMENT.md` |
 | Fusion algorithms | `docs/rs1/FUSION_ENGINE.md` |
 | Radar protocol | `docs/rs1/RADAR_INTEGRATION.md` |
 | RoomPlan API | `docs/rs1/ROOMPLAN_API.md` |
 | WorldState streaming | `docs/rs1/WORLDSTATE_PROTOCOL.md` |
 | Vision pipeline | `docs/rs1/VISION_PIPELINE.md` |
-| Cloud API spec | `docs/rs1/CLOUD_API_v2.md` |
-| Secrets (Infisical) | `docs/SECRETS.md` |
+| Cloud API spec (v1) | `docs/CLOUD_API.md` |
+| Secrets (legacy) | `docs/legacy/SECRETS.md` |
 
 ## Implementation Status
 
@@ -73,5 +74,5 @@ See `CHANGELOG.md` for detailed implementation notes.
 - **WorldState**: WebRTC DataChannel label `worldstate`, 30Hz JSON stream
 - **RoomPlan**: `POST /api/setup/roomplan` persists room config + sensor pose
 - **Radar**: Runs in Go via `go.bug.st/serial` (not native process)
-- **Secrets**: Stored in Infisical, not in repo. See `docs/SECRETS.md`
+- **Secrets**: Stored in Infisical, not in repo. See `docs/legacy/SECRETS.md`
 - **Cross-compile**: `GOARCH=arm GOARM=7`

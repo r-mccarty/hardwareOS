@@ -33,7 +33,7 @@
 ## Commit & Pull Request Guidelines
 - Commit subjects are descriptive and imperative (e.g., "Increase RESET_CONFIG_DELAY..."). Optional scopes like `refactor(e2e):` appear in history; include issue/PR refs like `(#1081)` when relevant.
 - PRs should include: a clear summary, testing performed, and screenshots for UI changes.
-- Before opening a PR, ensure tests pass and new UI strings are localized (see `DEVELOPMENT.md`).
+- Before opening a PR, ensure tests pass and new UI strings are localized (see `docs/rs1/DEVELOPMENT.md`).
 
 ## Security & Configuration Tips
 - Device configuration is stored at `/userdata/opticworks/config.json` (RS-1) or `/userdata/kvm_config.json` (legacy); do not commit secrets.

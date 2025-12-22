@@ -120,25 +120,24 @@ hardwareos/
 
 ## Documentation
 
-### RS-1 Product
+See `docs/README.md` for the current RS-1 docs index, PRD templates, and the legacy archive.
+
+### RS-1 Product (Current)
 
 | Document | Description |
 |----------|-------------|
 | [RS1_ARCHITECTURE.md](docs/rs1/RS1_ARCHITECTURE.md) | System overview and data flow |
+| [DEVELOPMENT.md](docs/rs1/DEVELOPMENT.md) | Build, deploy, and test workflows |
 | [FUSION_ENGINE.md](docs/rs1/FUSION_ENGINE.md) | Kalman filter and Hungarian algorithm |
 | [RADAR_INTEGRATION.md](docs/rs1/RADAR_INTEGRATION.md) | LD2450 protocol implementation |
 | [VISION_PIPELINE.md](docs/rs1/VISION_PIPELINE.md) | Camera/ISP/NPU pipeline |
 | [WORLDSTATE_PROTOCOL.md](docs/rs1/WORLDSTATE_PROTOCOL.md) | WebRTC streaming protocol |
 | [ROOMPLAN_API.md](docs/rs1/ROOMPLAN_API.md) | Room calibration endpoints |
+| [CLOUD_API.md](docs/CLOUD_API.md) | Cloud API (v1, current) |
 
-### Platform
+### Legacy
 
-| Document | Description |
-|----------|-------------|
-| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development setup and workflows |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Platform architecture |
-| [OTA_FLOW.md](docs/OTA_FLOW.md) | Over-the-air update system |
-| [CLOUD_SIGNALING.md](docs/CLOUD_SIGNALING.md) | WebRTC signaling via cloud |
+Archived pre-RS-1 docs are under [docs/legacy](docs/legacy/README.md).
 
 ## API Endpoints
 
