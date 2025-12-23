@@ -1,6 +1,6 @@
 has# OpticWorks RS-1 System Architecture
 
-The RS-1 is the first product built on **HardwareOS**, running on the Rockchip RV1106G hardware target. It provides vision/radar sensor fusion for real-time spatial tracking and occupancy monitoring.
+The RS-1 is the first product built on **HardwareOS**, running on the Rockchip RV1106G3 hardware target. It provides vision/radar sensor fusion for real-time spatial tracking and occupancy monitoring.
 
 ## HardwareOS Platform
 
@@ -16,12 +16,13 @@ The RS-1 extends HardwareOS with sensor fusion capabilities specific to spatial 
 
 ## Hardware Platform
 
-### Rockchip RV1106G SoC
+### Rockchip RV1106G3 SoC
 - **CPU**: ARM Cortex-A7 @ 1.2GHz
-- **NPU**: 0.5 TOPS RKNN for neural network inference
+- **NPU**: 1.0 TOPS RKNN for neural network inference
 - **ISP**: Image Signal Processor with LDCH (Lens Distortion Correction)
 - **Video Encoder**: H.265/H.264 hardware encoding
 - **Memory**: 256MB DDR3
+- **MIPI CSI**: 4-lane support
 
 ### Sensors
 | Sensor | Interface | Purpose |

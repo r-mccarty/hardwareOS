@@ -151,7 +151,7 @@ Convert ONNX to RKNN:
 from rknn.api import RKNN
 
 rknn = RKNN()
-rknn.config(target_platform='rv1106', quantized_dtype='w8a8')
+rknn.config(target_platform='rv1106g3', quantized_dtype='w8a8')
 rknn.load_onnx('yolov8n.onnx')
 rknn.build(do_quantization=True, dataset='calibration.txt')
 rknn.export_rknn('yolov8n.rknn')

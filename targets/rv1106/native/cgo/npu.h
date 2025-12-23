@@ -3,7 +3,7 @@
  * @brief Rockchip NPU Interface for RS-1 Vision Pipeline
  *
  * Runs YOLOv8 object detection inference on the Rockchip RKNN NPU.
- * RV1106G NPU: 0.5 TOPS
+ * RV1106G3 NPU: 1.0 TOPS
  * Model: YOLOv8n (nano) converted to .rknn format
  */
 
