@@ -59,6 +59,7 @@ cd services/cloud-api && npm run dev
 | RoomPlan API | `docs/rs1/ROOMPLAN_API.md` |
 | WorldState streaming | `docs/rs1/WORLDSTATE_PROTOCOL.md` |
 | Vision pipeline | `docs/rs1/VISION_PIPELINE.md` |
+| Camera sensors | `docs/rs1/CAMERA_SENSORS.md` |
 | Cloud API spec (v1) | `docs/CLOUD_API.md` |
 | Secrets | `docs/platform/SECRETS.md` |
 

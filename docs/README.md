@@ -9,6 +9,8 @@ This repository is RS-1 first, with shared platform documentation alongside prod
 - `docs/rs1/FUSION_ENGINE.md` - Kalman + Hungarian fusion
 - `docs/rs1/RADAR_INTEGRATION.md` - LD2450 protocol and driver
 - `docs/rs1/VISION_PIPELINE.md` - Camera/ISP/NPU pipeline
+- `docs/rs1/CAMERA_SENSORS.md` - Alternate camera sensors and USB HIL testing
+- `docs/rs1/CAMERA_HIL_INTEGRATION.md` - Camera integration testing tracks
 - `docs/rs1/WORLDSTATE_PROTOCOL.md` - WebRTC WorldState streaming
 - `docs/rs1/ROOMPLAN_API.md` - RoomPlan API
 - `docs/rs1/ROOMPLAN_INTEGRATION_TESTING.md` - RoomPlan hardware-in-the-loop testing
