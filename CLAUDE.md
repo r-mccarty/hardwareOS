@@ -70,6 +70,49 @@ cd services/cloud-api && npm run dev
 
 See `CHANGELOG.md` for detailed implementation notes.
 
+## Coder Workspace (HIL Testing)
+
+This repo is deployed to `coder.hardwareos.com` for hardware-in-the-loop testing with the Luckfox Pico Max dev board.
+
+### Pre-configured Access
+
+| Service | Status | Notes |
+|---------|--------|-------|
+| **GitHub CLI** | Authenticated | `gh` commands work, account: `r-mccarty` |
+| **Infisical Secrets** | Pre-loaded | All secrets in `~/.env.secrets` |
+| **Go** | v1.24.4 | Ready for builds |
+| **Node.js** | v22.21.0 | UI dependencies installed |
+
+### Luckfox Pico Max (Dev Board)
+
+| Method | Status | Command |
+|--------|--------|---------|
+| **ADB** | Working | `sudo adb shell` |
+| **USB RNDIS** | Working | `ping 172.32.0.93` (after IP setup) |
+| **Ethernet** | Available | Connect cable to `enp1s0` |
+
+**First-time RNDIS setup**:
+```bash
+sudo ip addr add 172.32.0.1/24 dev enx5aef472011ac
+adb kill-server && sudo adb start-server
+sudo adb shell
+```
+
+### Build Limitation
+
+Docker builds require BuildKit which has overlay issues in nested containers. Workarounds:
+1. **GitHub Actions**: Use CI for release builds
+2. **Host Docker**: Run builds outside Coder container on N100 host
+3. **Pre-built binaries**: Deploy via SCP from another machine
+
+### HIL Testing Docs
+
+| Doc | Purpose |
+|-----|---------|
+| `docs/rs1/CAMERA_HIL_INTEGRATION.md` | Camera sensor integration plan |
+| `docs/rs1/CAMERA_SENSORS.md` | Sensor specs and comparison |
+| `docs/rs1/ROOMPLAN_INTEGRATION_TESTING.md` | iPhone LiDAR testing |
+
 ## Patterns
 
 - **Logging**: Use `platform/logging` package. Trace: `LOG_TRACE_SCOPES="rs1,fusion,radar"`

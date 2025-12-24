@@ -2,6 +2,191 @@
 
 Comprehensive integration tracking for RS-1 vision pipeline testing with multiple camera sensors.
 
+---
+
+## HIL Test Environment Setup
+
+### Infrastructure Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           N100 Node (Coder Workspace)                        │
+│                           coder.hardwareos.com                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  • Go 1.24.4, Node.js 22.x                                                  │
+│  • rkdeveloptool, adb, picocom                                              │
+│  • Infisical secrets pre-loaded                                             │
+│  • GitHub CLI authenticated                                                  │
+└───────────────────────────┬─────────────────────────────────────────────────┘
+                            │
+              Ethernet (enp1s0 ↔ eth0)
+              192.168.1.1 ↔ 192.168.1.100
+                            │
+┌───────────────────────────┴─────────────────────────────────────────────────┐
+│                        Luckfox Pico Max (RV1106G3)                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                    │
+│   │ USB-C Port  │    │ 20-pin CSI  │    │ GPIO Header │                    │
+│   │ (Host Mode) │    │  Connector  │    │  (Power In) │                    │
+│   └──────┬──────┘    └──────┬──────┘    └──────┬──────┘                    │
+│          │                  │                  │                            │
+│          ▼                  ▼                  ▼                            │
+│   ┌────────────┐    ┌────────────┐    ┌────────────────┐                   │
+│   │ USB Camera │    │ MIPI CSI   │    │ 5V Power Supply│                   │
+│   │ (via OTG)  │    │  Camera    │    │ (Pin 39 + GND) │                   │
+│   └────────────┘    └────────────┘    └────────────────┘                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Luckfox Pico Max USB Host Mode
+
+The Luckfox USB-C port is **device-only by default** (for ADB/RNDIS). To connect USB cameras,
+switch to **host mode**:
+
+#### Prerequisites
+
+Before switching to host mode, you must set up an alternative connection since RNDIS will be lost:
+
+1. **Connect Ethernet cable** between N100 (`enp1s0`) and Luckfox (`eth0`)
+2. **Configure N100 ethernet**:
+   ```bash
+   sudo ip addr add 192.168.1.1/24 dev enp1s0
+   ```
+3. **Configure Luckfox ethernet** (via ADB while still in device mode):
+   ```bash
+   sudo adb shell
+   # On Luckfox:
+   ip addr add 192.168.1.100/24 dev eth0
+   ip link set eth0 up
+   ```
+
+#### Enable USB Host Mode
+
+```bash
+# On Luckfox (via ADB or SSH)
+luckfox-config
+# Navigate: Advanced Options → USB → select "host"
+# Reboot
+```
+
+#### After Host Mode Enabled
+
+| Connection | Status |
+|------------|--------|
+| USB RNDIS | ❌ Lost (expected) |
+| ADB | ❌ Lost (expected) |
+| Ethernet SSH | ✅ Use this |
+| Serial console | ✅ Backup option |
+
+### Power Supply via GPIO Header
+
+When USB-C is in host mode, power the board via GPIO header pins:
+
+#### Pinout
+
+| Pin | Name | Description |
+|-----|------|-------------|
+| 36 | VBUS | 5V from USB (output only when in device mode) |
+| 38 | GND | Ground |
+| **39** | **VSYS** | **5V input (recommended for external power)** |
+| 40 | GND | Ground |
+
+#### Wiring Diagram
+
+```
+5V USB Power Adapter                    Luckfox Pico Max
+┌─────────────────┐                    ┌─────────────────┐
+│                 │                    │   GPIO Header   │
+│    +5V (Red) ───┼────────────────────┼──► Pin 39 (VSYS)│
+│                 │                    │                 │
+│    GND (Black)──┼────────────────────┼──► Pin 38 (GND) │
+│                 │                    │                 │
+└─────────────────┘                    └─────────────────┘
+
+Requirements:
+• 5V 2A USB power adapter (or better)
+• Dupont jumper wires or spliced USB cable
+```
+
+> **Warning**: Double-check polarity before connecting. Reversing power will damage the board.
+
+### Complete HIL Wiring
+
+```
+                                    ┌─────────────────────────────────┐
+┌──────────────┐                    │      Luckfox Pico Max          │
+│    N100      │    Ethernet        │                                 │
+│              ├────────────────────┤ eth0 (192.168.1.100)           │
+│  (enp1s0)    │  192.168.1.x/24    │                                 │
+│192.168.1.1   │                    │  ┌───────────────────────────┐ │
+└──────────────┘                    │  │ USB-C (Host Mode)         │ │
+                                    │  │         │                 │ │
+┌──────────────┐                    │  │    ┌────┴────┐            │ │
+│ 5V 2A Power  │   Pin 39 (VSYS)    │  │    │USB-C to │            │ │
+│   Adapter    ├────────────────────┤──┼───►│USB-A OTG│            │ │
+│              │   Pin 38 (GND)     │  │    │ Adapter │            │ │
+│   GND ───────┼────────────────────┤──┼────┴────┬────┘            │ │
+└──────────────┘                    │  │         │                 │ │
+                                    │  └─────────┼─────────────────┘ │
+                                    │            │                   │
+                                    │     ┌──────┴──────┐            │
+                                    │     │ USB Camera  │            │
+                                    │     │ (Innomaker) │            │
+                                    │     └─────────────┘            │
+                                    │                                 │
+                                    │  ┌───────────────────────────┐ │
+                                    │  │ 20-pin CSI Connector      │ │
+                                    │  │         │                 │ │
+                                    │  │    ┌────┴────┐            │ │
+                                    │  │    │  MIPI   │            │ │
+                                    │  │    │ Camera  │            │ │
+                                    │  │    │(SC3336) │            │ │
+                                    │  │    └─────────┘            │ │
+                                    │  └───────────────────────────┘ │
+                                    └─────────────────────────────────┘
+```
+
+### Bill of Materials (HIL Setup)
+
+| Item | Qty | Purpose | Source |
+|------|-----|---------|--------|
+| USB-C to USB-A OTG adapter | 1 | Connect USB camera to Luckfox | Amazon (~$5) |
+| 5V 2A USB power adapter | 1 | Power Luckfox via GPIO | Any USB charger |
+| Dupont jumper wires (F-F) | 2 | Connect power to GPIO header | Electronics store |
+| Ethernet cable (Cat5e+) | 1 | N100 ↔ Luckfox connection | Any length needed |
+| Innomaker 720P USB camera | 1 | USB camera testing | Amazon (~$17) |
+
+### Quick Start: USB Camera HIL Test
+
+```bash
+# 1. On N100 (Coder workspace) - Configure ethernet
+sudo ip addr add 192.168.1.1/24 dev enp1s0
+
+# 2. On Luckfox (via ADB) - Configure ethernet before switching modes
+sudo adb shell 'ip addr add 192.168.1.100/24 dev eth0 && ip link set eth0 up'
+
+# 3. Test ethernet connectivity
+ping 192.168.1.100
+
+# 4. On Luckfox - Enable USB host mode
+sudo adb shell 'luckfox-config'
+# Select: Advanced Options → USB → host → OK → Reboot
+
+# 5. Power off, connect:
+#    - 5V power to Pin 39 (VSYS) + Pin 38 (GND)
+#    - USB camera via OTG adapter to USB-C port
+#    - Ethernet cable
+
+# 6. Power on and verify camera
+ssh root@192.168.1.100
+v4l2-ctl --list-devices
+v4l2-ctl --device=/dev/video0 --list-formats-ext
+```
+
+---
+
 ## Hardware Inventory
 
 ### Development Boards
@@ -23,9 +208,13 @@ Comprehensive integration tracking for RS-1 vision pipeline testing with multipl
 
 ### Accessories
 
-| Item | Qty | Status |
-|------|-----|--------|
-| 1.69" LCD Display | 1 | 🚢 Ordered |
+| Item | Qty | Status | Notes |
+|------|-----|--------|-------|
+| 1.69" LCD Display | 1 | 🚢 Ordered | For on-device UI |
+| USB-C to USB-A OTG adapter | 1 | 📋 Needed | For USB camera connection |
+| 5V 2A USB power adapter | 1 | 📋 Needed | Power via GPIO when USB-C is host |
+| Dupont jumper wires (F-F) | 2 | 📋 Needed | Connect power to GPIO header |
+| Ethernet cable | 1 | 📋 Needed | N100 ↔ Luckfox connection |
 
 ---
 
