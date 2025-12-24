@@ -27,9 +27,9 @@ The **RS-1** is the flagship product—a vision/radar sensor fusion device for r
 
 ### Hardware
 
-- **Rockchip RV1106G** - ARM Cortex-A7 + RISC-V MCU
-- **SC3336 MIPI Camera** - 3MP with LDCH lens distortion correction
-- **RKNN NPU** - 0.5 TOPS for YOLOv8 inference
+- **Rockchip RV1106G3** - ARM Cortex-A7 @ 1.2GHz, 256MB RAM
+- **SC3336 MIPI Camera** - 3MP with LDCH lens distortion correction (4-lane MIPI CSI)
+- **RKNN NPU** - 1.0 TOPS for YOLOv8 inference
 - **HLK-LD2450** - 24GHz mmWave radar (3 targets, 6m range)
 
 ## Architecture

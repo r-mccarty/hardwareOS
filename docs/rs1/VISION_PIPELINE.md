@@ -25,7 +25,7 @@ The RS-1 vision pipeline captures frames from the SC3336 MIPI sensor, applies le
 ### SC3336 MIPI Sensor
 - **Resolution**: 2304 x 1296 (3MP)
 - **Frame Rate**: 30 FPS
-- **Interface**: MIPI CSI-2, 2 lanes
+- **Interface**: MIPI CSI-2, 4 lanes (RV1106G3 supports up to 4 lanes)
 - **Pixel Format**: RAW Bayer (RGGB)
 - **FOV**: ~120 degrees (with wide-angle lens)
 
@@ -38,8 +38,8 @@ The RS-1 vision pipeline captures frames from the SC3336 MIPI sensor, applies le
   - HDR (High Dynamic Range)
   - Noise Reduction
 
-### Rockchip NPU
-- **Performance**: 0.5 TOPS
+### Rockchip NPU (RV1106G3)
+- **Performance**: 1.0 TOPS
 - **Framework**: RKNN (Rockchip Neural Network)
 - **Model Format**: `.rknn` (converted from ONNX/PyTorch)
 - **Input**: RGB 640x640
@@ -388,7 +388,7 @@ Convert PyTorch/ONNX to RKNN using RKNN-Toolkit2:
 from rknn.api import RKNN
 
 rknn = RKNN()
-rknn.config(target_platform='rv1106')
+rknn.config(target_platform='rv1106g3')
 rknn.load_onnx('yolov8n.onnx')
 rknn.build(do_quantization=True, dataset='calibration.txt')
 rknn.export_rknn('yolov8n.rknn')
