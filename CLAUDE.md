@@ -62,6 +62,7 @@ cd services/cloud-api && npm run dev
 | Camera sensors | `docs/rs1/CAMERA_SENSORS.md` |
 | Cloud API spec (v1) | `docs/CLOUD_API.md` |
 | Secrets | `docs/platform/SECRETS.md` |
+| Coder workspace | `docs/platform/CODER_WORKSPACE.md` |
 
 ## Implementation Status
 
