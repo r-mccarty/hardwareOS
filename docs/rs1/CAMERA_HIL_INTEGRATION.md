@@ -93,7 +93,47 @@ When USB-C is in host mode, power the board via GPIO header pins:
 | **39** | **VSYS** | **5V input (recommended for external power)** |
 | 40 | GND | Ground |
 
-#### Wiring Diagram
+#### Power Requirements
+
+| Device | Current Draw | Notes |
+|--------|-------------|-------|
+| Luckfox Pico Max (active + camera) | ~180mA (0.9W) | With encoding |
+| Luckfox Pico Max (idle) | ~40mA | Halted state |
+| USB Camera (typical) | ~100-200mA | Innomaker 720P |
+| **Total** | **~330mA** | Well under USB 3.0 limit |
+
+Source: [Luckfox Forums - Power consumption](https://forums.luckfox.com/viewtopic.php?t=615)
+
+#### Option A: Spliced USB Cable from N100 (Recommended)
+
+Use a USB-A port on the N100 to power the Luckfox - no separate adapter needed!
+
+| N100 USB Port | Max Current | Status |
+|---------------|-------------|--------|
+| USB 2.0 | 500mA | ✅ Sufficient |
+| USB 3.0/3.1 | 900mA | ✅ Recommended |
+
+```
+USB-A Cable (cut off device end)        Luckfox Pico Max
+┌─────────────────┐                    ┌─────────────────┐
+│  Red (+5V) ─────┼────────────────────┼──► Pin 39 (VSYS)│
+│  Black (GND) ───┼────────────────────┼──► Pin 38 (GND) │
+│  Green (D+) ────┼── (do not connect) │                 │
+│  White (D-) ────┼── (do not connect) │                 │
+└─────────────────┘                    └─────────────────┘
+        ▲
+        │
+   N100 Front USB-A Port
+```
+
+**Steps:**
+1. Cut a USB-A cable (sacrifice an old one)
+2. Strip the red (+5V) and black (GND) wires
+3. Attach Dupont connectors or solder directly
+4. Connect to Luckfox Pin 39 (VSYS) and Pin 38 (GND)
+5. Plug USB-A end into N100 front USB port
+
+#### Option B: Separate 5V Power Adapter
 
 ```
 5V USB Power Adapter                    Luckfox Pico Max
@@ -153,10 +193,12 @@ Requirements:
 | Item | Qty | Purpose | Source |
 |------|-----|---------|--------|
 | USB-C to USB-A OTG adapter | 1 | Connect USB camera to Luckfox | Amazon (~$5) |
-| 5V 2A USB power adapter | 1 | Power Luckfox via GPIO | Any USB charger |
+| Sacrificial USB-A cable | 1 | Splice for power from N100 | Any old cable |
 | Dupont jumper wires (F-F) | 2 | Connect power to GPIO header | Electronics store |
 | Ethernet cable (Cat5e+) | 1 | N100 ↔ Luckfox connection | Any length needed |
 | Innomaker 720P USB camera | 1 | USB camera testing | Amazon (~$17) |
+
+> **Note**: No separate power adapter needed - power comes from N100 USB port (~330mA needed, 900mA available).
 
 ### Quick Start: USB Camera HIL Test
 
