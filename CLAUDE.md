@@ -60,9 +60,21 @@ cd services/cloud-api && npm run dev
 | WorldState streaming | `docs/rs1/WORLDSTATE_PROTOCOL.md` |
 | Vision pipeline | `docs/rs1/VISION_PIPELINE.md` |
 | Camera sensors | `docs/rs1/CAMERA_SENSORS.md` |
+| **3D Visualization** | `docs/rs1/VISUALIZATION.md` |
 | Cloud API spec (v1) | `docs/CLOUD_API.md` |
+| Cloudflare Pages demo | `docs/platform/CLOUDFLARE_PAGES.md` |
 | Secrets | `docs/platform/SECRETS.md` |
 | Coder workspace | `docs/platform/CODER_WORKSPACE.md` |
+
+## Live Demo
+
+The Tesla FSD-style 3D visualization is deployed to Cloudflare Pages:
+
+| URL | Purpose |
+|-----|---------|
+| https://hardwareos-demo.pages.dev/demo | Live visualization demo with simulated occupants |
+
+Deploy updates: `cd ui && npm run build:prod && npx wrangler pages deploy dist --project-name=hardwareos-demo`
 
 ## Implementation Status
 

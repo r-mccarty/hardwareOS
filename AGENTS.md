@@ -38,3 +38,14 @@
 ## Security & Configuration Tips
 - Device configuration is stored at `/userdata/opticworks/config.json` (RS-1) or `/userdata/kvm_config.json` (legacy); do not commit secrets.
 - Useful dev env vars: `LOG_TRACE_SCOPES` for verbose logging and `DEVICE_PROXY_URL` for frontend dev.
+
+## 3D Visualization
+- The RS-1 3D visualization uses Three.js with React Three Fiber (`ui/src/components/visualization/`).
+- Tesla FSD-inspired aesthetic: motion trails, prediction cones, radar sweep, bloom post-processing.
+- Demo mode available at `/demo` route with simulated occupants.
+- See `docs/rs1/VISUALIZATION.md` for detailed component documentation.
+
+## Cloudflare Pages Demo
+- Live demo: https://hardwareos-demo.pages.dev/demo
+- Deploy: `cd ui && npm run build:prod && npx wrangler pages deploy dist --project-name=hardwareos-demo`
+- See `docs/platform/CLOUDFLARE_PAGES.md` for deployment details.

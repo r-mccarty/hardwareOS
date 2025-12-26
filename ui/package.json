@@ -35,6 +35,7 @@
     "@heroicons/react": "^2.2.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
+    "@react-three/postprocessing": "^3.0.4",
     "@types/three": "^0.182.0",
     "@vitejs/plugin-basic-ssl": "^2.1.0",
     "@xterm/addon-clipboard": "^0.1.0",

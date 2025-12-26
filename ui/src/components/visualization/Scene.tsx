@@ -1,12 +1,16 @@
 /**
  * Main 3D visualization scene for RS-1 occupancy tracking
  *
- * Tesla FSD-style visualization showing tracked people in a room.
- * Supports both simple RoomPlan format and Apple CapturedRoom 3D geometry.
+ * Tesla FSD-style visualization with:
+ * - Bloom post-processing for signature glow effect
+ * - Motion trails and prediction cones on tracked objects
+ * - Radar sweep animation on floor grid
+ * - Uncertainty halos based on tracking confidence
  */
 /* eslint-disable react/no-unknown-property */
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { useRoomPlan } from "@/hooks/useRoomPlan";
 import { useWorldState } from "@/hooks/useWorldState";
 import { useWorldStateDemo } from "@/hooks/useWorldStateDemo";
@@ -60,16 +64,31 @@ export function Scene({ deviceUrl, demo = false }: SceneProps) {
           near: 0.1,
           far: 100,
         }}
-        gl={{ antialias: true }}
+        gl={{
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance",
+        }}
+        dpr={[1, 2]} // Responsive pixel ratio
       >
-        {/* Dark background with fog for depth */}
-        <color attach="background" args={["#0a0a0f"]} />
-        <fog attach="fog" args={["#0a0a0f", 15, 50]} />
+        {/* Deep dark background - Tesla FSD signature */}
+        <color attach="background" args={["#030308"]} />
+        <fog attach="fog" args={["#030308", 12, 45]} />
 
-        {/* Lighting */}
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[10, 20, 10]} intensity={0.6} />
-        <directionalLight position={[-10, 15, -10]} intensity={0.3} />
+        {/* Enhanced lighting for FSD aesthetic */}
+        <ambientLight intensity={0.25} color="#4a5568" />
+        <directionalLight
+          position={[10, 25, 10]}
+          intensity={0.5}
+          color="#60a5fa"
+        />
+        <directionalLight
+          position={[-10, 20, -10]}
+          intensity={0.3}
+          color="#3b82f6"
+        />
+        {/* Subtle fill light from below for that futuristic look */}
+        <pointLight position={[0, -5, 0]} intensity={0.1} color="#1e40af" />
 
         <Suspense fallback={null}>
           {/* Room geometry - use CapturedRoom 3D or simple 2D boundary */}
@@ -90,10 +109,40 @@ export function Scene({ deviceUrl, demo = false }: SceneProps) {
         </Suspense>
 
         <CameraController />
+
+        {/* Post-processing effects for Tesla FSD glow */}
+        <EffectComposer>
+          <Bloom
+            luminanceThreshold={0.2}
+            luminanceSmoothing={0.9}
+            intensity={0.8}
+            radius={0.8}
+          />
+          <Vignette
+            eskil={false}
+            offset={0.3}
+            darkness={0.6}
+          />
+        </EffectComposer>
       </Canvas>
 
       {/* Overlay UI */}
       <StatsOverlay />
+
+      {/* Scan line overlay effect (CSS) */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)",
+        }}
+      />
+
+      {/* Corner accents - Tesla FSD UI style */}
+      <div className="pointer-events-none absolute left-4 top-4 h-8 w-8 border-l-2 border-t-2 border-blue-500/30" />
+      <div className="pointer-events-none absolute right-4 top-4 h-8 w-8 border-r-2 border-t-2 border-blue-500/30" />
+      <div className="pointer-events-none absolute bottom-4 left-4 h-8 w-8 border-b-2 border-l-2 border-blue-500/30" />
+      <div className="pointer-events-none absolute bottom-4 right-4 h-8 w-8 border-b-2 border-r-2 border-blue-500/30" />
 
       {/* Error display */}
       {error && (
