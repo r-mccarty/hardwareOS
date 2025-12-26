@@ -8,6 +8,7 @@ This repository is RS-1 first, with shared platform documentation alongside prod
 - `docs/rs1/DEVELOPMENT.md` - Build, deploy, and test workflows
 - `docs/rs1/FUSION_ENGINE.md` - Kalman + Hungarian fusion
 - `docs/rs1/RADAR_INTEGRATION.md` - LD2450 protocol and driver
+- `docs/rs1/LD2450_INTEGRATION_PLAN.md` - LD2450 HIL hookup and calibration
 - `docs/rs1/VISION_PIPELINE.md` - Camera/ISP/NPU pipeline
 - `docs/rs1/CAMERA_SENSORS.md` - Alternate camera sensors and USB HIL testing
 - `docs/rs1/CAMERA_HIL_INTEGRATION.md` - Camera integration testing tracks
