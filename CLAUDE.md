@@ -56,6 +56,7 @@ cd services/cloud-api && npm run dev
 | RS-1 development | `docs/rs1/DEVELOPMENT.md` |
 | Fusion algorithms | `docs/rs1/FUSION_ENGINE.md` |
 | Radar protocol | `docs/rs1/RADAR_INTEGRATION.md` |
+| **LD2450 HIL + Calibration** | `docs/rs1/LD2450_INTEGRATION_PLAN.md` |
 | RoomPlan API | `docs/rs1/ROOMPLAN_API.md` |
 | WorldState streaming | `docs/rs1/WORLDSTATE_PROTOCOL.md` |
 | Vision pipeline | `docs/rs1/VISION_PIPELINE.md` |
@@ -122,6 +123,7 @@ Docker builds require BuildKit which has overlay issues in nested containers. Wo
 
 | Doc | Purpose |
 |-----|---------|
+| `docs/rs1/LD2450_INTEGRATION_PLAN.md` | LD2450 radar hookup + calibration |
 | `docs/rs1/CAMERA_HIL_INTEGRATION.md` | Camera sensor integration plan |
 | `docs/rs1/CAMERA_SENSORS.md` | Sensor specs and comparison |
 | `docs/rs1/ROOMPLAN_INTEGRATION_TESTING.md` | iPhone LiDAR testing |
