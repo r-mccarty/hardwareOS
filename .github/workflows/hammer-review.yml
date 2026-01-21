@@ -3,6 +3,7 @@ name: Hammer Review (RFD)
 on:
   push:
     branches:
+      - dev
       - main
       - "feature/**"
   workflow_dispatch:
